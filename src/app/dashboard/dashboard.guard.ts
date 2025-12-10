@@ -1,11 +1,17 @@
 import { inject } from '@angular/core';
 import {CanActivateFn, Router} from '@angular/router';
-import {of} from 'rxjs';
 
-export function DashboardGuard(redirectRoute: string = ''): CanActivateFn {
+export function DashboardGuard(redirectRoute: string = '/account/signin'): CanActivateFn {
     return () => {
-        const canAccess: boolean = true; // Cette valeur sera calculée par le service plus tard
-        const router: Router = inject(Router);// Nous faisons une DI pour récupérer le système de Router
-        return canAccess || router.createUrlTree([redirectRoute]);
+        // Vérifier l'authentification depuis localStorage
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        const router: Router = inject(Router);
+        
+        if (isAuthenticated) {
+            return true;
+        } else {
+            // Rediriger vers la page de connexion si non authentifié
+            return router.createUrlTree([redirectRoute]);
+        }
     };
-    }
+}

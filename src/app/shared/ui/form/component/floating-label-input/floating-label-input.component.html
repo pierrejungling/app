@@ -6,7 +6,7 @@
     (focus)="inputFocus=true"
     (blur)="inputFocus=false" 
     [formControl]="control" 
-    [autocomplete]="type === 'password' ? 'new-password' : 'username'">
+    [autocomplete]="getAutocomplete()">
   <label 
     class="floating-label"
     [class.fixed-label]="inputFocus || (control.value && control.value.length > 0)">{{label}}</label>

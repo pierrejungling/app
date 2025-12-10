@@ -14,4 +14,13 @@ export class FloatingLabelInputComponent {
   @Input({ required: true }) formGroup!: FormGroup;
   @Input() type: string = 'text';
   inputFocus: boolean = false;
+
+  getAutocomplete(): string {
+    if (this.type === 'password') {
+      return 'new-password';
+    } else if (this.type === 'email') {
+      return 'email';
+    }
+    return 'username';
+  }
 }

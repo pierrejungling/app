@@ -6,6 +6,7 @@ export enum AppRoutes {
   AUTHENTICATED = `/${AppNode.AUTHENTICATED}`,
   MEMBER = `${AppRoutes.AUTHENTICATED}/${AppNode.MEMBER}`,
   MEMBER_DETAIL = `${AppRoutes.MEMBER}/detail/`,
-  SIGN_IN = `/${AppNode.SIGN_IN}`,
+  SIGN_IN = `/${AppNode.PUBLIC}/${AppNode.SIGN_IN}`,
+  SIGN_UP = `/${AppNode.PUBLIC}/${AppNode.SIGN_UP}`,
 }
 

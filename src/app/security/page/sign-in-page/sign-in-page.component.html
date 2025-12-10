@@ -1,6 +1,21 @@
-<div id="sign-in-wrapper">
+<app-header></app-header>
+<div id="sign-in-wrapper" class="fade-in">
+  <div class="logo-section">
+    <img 
+      [src]="logoPath" 
+      alt="LA GRAVISTERIE" 
+      class="logo-image"
+      (load)="onLogoLoad()"
+      (error)="onLogoError($event)"
+      *ngIf="!logoError">
+    <h1 class="logo-text" *ngIf="logoError">LA GRAVISTERIE</h1>
+  </div>
   <span class="title">{{title}}</span>
   <span class="sub-title">{{subTitle}}</span>
+  
+  <div class="success-area" *ngIf="successMessage">
+    <p class="success-message">{{successMessage}}</p>
+  </div>
   
   <div class="error-area" *ngIf="errors().length > 0">
     <p>{{'security-feature.sign-in-page.error.description' | translate: {count: errors().length} }}</p>
@@ -11,13 +26,13 @@
 
     <section id="content">
       <app-floating-label-input
-        [label]="'security-feature.sign-in-page.label.username' | translate"
+        [label]="'Nom d\'utilisateur'"
         [control]="get('username')"
         [formGroup]="formGroup">
       </app-floating-label-input>
       
       <app-floating-label-input
-        [label]="'security-feature.sign-in-page.label.password' | translate"
+        [label]="'Mot de passe'"
         [control]="get('password')"
         [formGroup]="formGroup"
         type="password">
@@ -25,7 +40,8 @@
     </section>
 
     <div class="button-area">
-      <button (click)="signIn()">se connecter</button>
+      <button type="button" class="btn-primary" (click)="signIn()">Se connecter</button>
+      <button type="button" class="btn-secondary" (click)="goToSignUp()">S'inscrire</button>
     </div>
   </form>
 </div>

@@ -1,0 +1,29 @@
+<header class="header">
+  <div class="header__container">
+    <div class="header__logo">
+      <img 
+        [src]="getLogoPath()" 
+        alt="LA GRAVISTERIE" 
+        class="header__logo-image"
+        (load)="onLogoLoad()"
+        (error)="onLogoError()"
+        *ngIf="!showTextFallback()">
+      <span class="header__logo-text" *ngIf="showTextFallback()">LA GRAVISTERIE</span>
+    </div>
+    <div class="header__actions" *ngIf="isAuthenticated()">
+      <button 
+        class="header__settings-btn"
+        (click)="goToSettings()"
+        type="button"
+        title="Paramètres">
+        ⚙️
+      </button>
+      <button 
+        class="header__logout-btn"
+        (click)="logout()"
+        type="button">
+        Se déconnecter
+      </button>
+    </div>
+  </div>
+</header>

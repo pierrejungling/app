@@ -15,6 +15,11 @@ export const DashboardRoutes: Routes = [
             {
                 path: AppNode.MEMBER,
                 loadChildren: () => import('./feature/member/member.routes').then(r => r.memberRoutes)
+            },
+            {
+                path: 'settings',
+                loadComponent: () => import('./settings/page/settings-page/settings-page.component')
+                .then(c => c.SettingsPageComponent),
             }
         ]
     }

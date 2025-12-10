@@ -1,1 +1,36 @@
-<p>dashboard-home-page works!</p>
+<app-header></app-header>
+
+<div class="dashboard-home">
+  <div class="dashboard-home__container">
+    <!-- Logo en grand -->
+    <div class="dashboard-home__logo-section fade-in">
+      <img 
+        [src]="logoPath" 
+        alt="LA GRAVISTERIE" 
+        class="dashboard-home__logo"
+        (load)="onLogoLoad()"
+        (error)="onLogoError($event)">
+      <h1 class="dashboard-home__title" *ngIf="logoError || !logoPath">LA GRAVISTERIE</h1>
+      <p class="dashboard-home__subtitle">Bienvenue, {{ currentUser }}</p>
+    </div>
+
+    <!-- Cartes de navigation -->
+    <div class="dashboard-home__cards">
+      <div 
+        *ngFor="let card of dashboardCards; let i = index"
+        class="dashboard-card"
+        [routerLink]="card.route"
+        [style.animation-delay]="(i * 0.1) + 's'">
+        <div class="dashboard-card__icon">{{ card.icon }}</div>
+        <h3 class="dashboard-card__title">{{ card.title }}</h3>
+        <p class="dashboard-card__description">{{ card.description }}</p>
+        <div class="dashboard-card__footer">
+          <span class="dashboard-card__count" *ngIf="card.count !== undefined">
+            {{ card.count }} commande{{ card.count > 1 ? 's' : '' }}
+          </span>
+          <span class="dashboard-card__arrow">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
