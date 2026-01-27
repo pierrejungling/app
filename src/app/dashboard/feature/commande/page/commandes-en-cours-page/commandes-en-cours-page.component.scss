@@ -1,0 +1,176 @@
+.commandes-en-cours-wrapper {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 2rem;
+}
+
+.commandes-en-cours-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0 0 2rem 0;
+  color: #333;
+}
+
+.loading-area {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.commandes-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1400px;
+}
+
+.commandes-table thead {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.commandes-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  border-right: 1px solid #dee2e6;
+  min-width: 180px;
+  vertical-align: top;
+}
+
+.commandes-table th:last-child {
+  border-right: none;
+}
+
+.commandes-table td {
+  padding: 1rem;
+  border-right: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: top;
+  min-width: 180px;
+}
+
+.commandes-table td:last-child {
+  border-right: none;
+}
+
+.statut-column {
+  min-height: 400px;
+}
+
+.commande-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.commande-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.commande-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.commande-header {
+  margin-bottom: 0.75rem;
+}
+
+.commande-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  word-break: break-word;
+}
+
+.commande-info {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.commande-info p {
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.commande-info strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.commande-client {
+  color: #555;
+}
+
+.commande-date,
+.commande-deadline {
+  color: #777;
+  font-size: 0.8125rem;
+}
+
+.empty-column {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #999;
+}
+
+.empty-message {
+  font-size: 0.875rem;
+  font-style: italic;
+  margin: 0;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .commandes-en-cours-wrapper {
+    padding: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .commandes-table {
+    min-width: 1200px;
+  }
+
+  .commande-card {
+    padding: 0.75rem;
+  }
+
+  .commande-title {
+    font-size: 0.9rem;
+  }
+
+  .commande-info {
+    font-size: 0.8rem;
+  }
+}

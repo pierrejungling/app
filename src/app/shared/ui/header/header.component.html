@@ -10,6 +10,16 @@
         *ngIf="!showTextFallback()">
       <span class="header__logo-text" *ngIf="showTextFallback()">LA GRAVISTERIE</span>
     </div>
+    <div class="header__center">
+      <button 
+        class="header__back-btn"
+        *ngIf="showBackButton()"
+        (click)="goBack()"
+        type="button"
+        title="Retour au dashboard">
+        ← Retour
+      </button>
+    </div>
     <div class="header__actions" *ngIf="isAuthenticated()">
       <button 
         class="header__settings-btn"

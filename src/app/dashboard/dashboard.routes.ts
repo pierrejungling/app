@@ -20,6 +20,10 @@ export const DashboardRoutes: Routes = [
                 path: 'settings',
                 loadComponent: () => import('./settings/page/settings-page/settings-page.component')
                 .then(c => c.SettingsPageComponent),
+            },
+            {
+                path: AppNode.COMMANDES,
+                loadChildren: () => import('./feature/commande/commande.routes').then(r => r.commandeRoutes)
             }
         ]
     }

@@ -7,6 +7,9 @@ export enum AppNode {
   DETAIL = 'detail/:id',
   SIGN_IN = 'signin',
   SIGN_UP = 'signup',
+  COMMANDES = 'commandes',
+  NOUVELLE_COMMANDE = 'nouvelle',
+  COMMANDES_EN_COURS = 'en-cours',
   FALL_BACK = '**',
 }
 

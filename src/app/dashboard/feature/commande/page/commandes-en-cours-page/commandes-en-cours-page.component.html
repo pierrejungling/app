@@ -1,0 +1,57 @@
+<app-header></app-header>
+
+<div class="commandes-en-cours-wrapper">
+  <div class="commandes-en-cours-container">
+    <h1 class="page-title">Commandes en cours</h1>
+
+    <div class="loading-area" *ngIf="isLoading()">
+      <p>Chargement des commandes...</p>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading()">
+      <div class="table-scroll">
+        <table class="commandes-table">
+          <thead>
+            <tr>
+              <th *ngFor="let statut of statuts" class="statut-column">
+                {{ getStatutLabel(statut) }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td *ngFor="let statut of statuts" class="statut-column">
+                <div class="commande-cards">
+                  <div 
+                    *ngFor="let commande of getCommandesByStatut(statut)" 
+                    class="commande-card"
+                    [title]="commande.produit || 'Commande #' + commande.id_commande">
+                    <div class="commande-header">
+                      <h3 class="commande-title">
+                        {{ commande.produit || 'Commande #' + commande.id_commande.substring(0, 8) }}
+                      </h3>
+                    </div>
+                    <div class="commande-info">
+                      <p class="commande-client">
+                        <strong>Client:</strong> {{ getClientName(commande.client) }}
+                      </p>
+                      <p class="commande-date">
+                        <strong>Date:</strong> {{ formatDate(commande.date_commande) }}
+                      </p>
+                      <p class="commande-deadline" *ngIf="commande.deadline">
+                        <strong>Deadline:</strong> {{ formatDate(commande.deadline) }}
+                      </p>
+                    </div>
+                  </div>
+                  <div *ngIf="getCommandesByStatut(statut).length === 0" class="empty-column">
+                    <p class="empty-message">Aucune commande</p>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

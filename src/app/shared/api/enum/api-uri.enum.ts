@@ -3,5 +3,7 @@ export enum ApiURI {
   ADMIN_SIGN_IN = 'account/admin-signin',
   SIGN_UP = 'account/signup',
   ME = 'account/me',
-  REFRESH_TOKEN = 'account/refresh'
+  REFRESH_TOKEN = 'account/refresh',
+  AJOUTER_COMMANDE = 'commande/ajouter',
+  LISTE_COMMANDES = 'commande/liste'
 }

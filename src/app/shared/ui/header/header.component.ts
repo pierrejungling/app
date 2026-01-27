@@ -1,8 +1,9 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { AppRoutes } from '@shared';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { AppRoutes, AppNode } from '@shared';
 import { TokenService } from '@api';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-header',
@@ -35,10 +36,29 @@ export class HeaderComponent {
     const token = this.tokenService.token();
     return !token.isEmpty && token.token.trim().length > 0;
   });
+
+  // Signal pour suivre la route actuelle
+  currentRoute = signal<string>('');
+  showBackButton = computed(() => {
+    if (!this.isAuthenticated()) return false;
+    const route = this.currentRoute();
+    // Afficher le bouton retour si on n'est pas sur la page d'accueil du dashboard
+    return route !== `/${AppNode.AUTHENTICATED}` && route !== `/${AppNode.AUTHENTICATED}/`;
+  });
   
   constructor(private router: Router) {
     // Initialiser avec le logo principal
     this.currentLogoPath = this.possibleLogos[0];
+    
+    // Écouter les changements de route
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.currentRoute.set(event.url);
+      });
+    
+    // Initialiser avec la route actuelle
+    this.currentRoute.set(this.router.url);
   }
   
   logout(): void {
@@ -52,6 +72,10 @@ export class HeaderComponent {
 
   goToSettings(): void {
     this.router.navigate(['/dashboard/settings']);
+  }
+
+  goBack(): void {
+    this.router.navigate([AppRoutes.AUTHENTICATED]);
   }
   
   private encodeLogoPath(path: string): string {

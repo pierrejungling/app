@@ -15,6 +15,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--spacing-md);
   }
 
   &__logo {
@@ -22,6 +23,39 @@
     align-items: center;
     gap: var(--spacing-sm);
     height: 50px; // Hauteur fixe pour éviter les sauts de layout
+    flex-shrink: 0;
+  }
+
+  &__center {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    justify-content: flex-start;
+    margin-left: var(--spacing-md);
+  }
+
+  &__back-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: #5a6268;
+    }
+
+    &:active {
+      background-color: #545b62;
+    }
   }
 
   &__logo-image {
