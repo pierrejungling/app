@@ -45,4 +45,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
-NestJS/.env
+backend/.env
+frontend/node_modules
+backend/node_modules
+frontend/dist
+frontend/.angular

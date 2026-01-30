@@ -1,12 +1,13 @@
 # App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.19.
+Ce projet contient une application **Angular** (frontend) et une **API NestJS** (backend), organisées dans deux dossiers :
 
-Ce projet contient à la fois une application Angular (frontend) et une API NestJS (backend).
+- **`frontend/`** — Application Angular (générée avec [Angular CLI](https://github.com/angular/angular-cli) 19.2.19)
+- **`backend/`** — API NestJS
 
 ## Installation
 
-Pour installer toutes les dépendances (Angular et NestJS), exécutez :
+Pour installer toutes les dépendances (frontend et backend), exécutez à la **racine du projet** :
 
 ```bash
 npm run install:all
@@ -15,96 +16,92 @@ npm run install:all
 Ou manuellement :
 
 ```bash
-npm install
-cd NestJS && npm install
+cd frontend && npm install
+cd ../backend && npm install
 ```
 
 ## Configuration
 
-### NestJS
+### Backend (NestJS)
 
-Le fichier `.env` dans le dossier `NestJS/` doit être configuré avec vos paramètres de base de données et autres variables d'environnement. Un fichier `.env` d'exemple a été créé avec les valeurs par défaut.
+Le fichier `.env` dans le dossier `backend/` doit être configuré avec vos paramètres de base de données et autres variables d'environnement.
 
 **Important** : Modifiez les valeurs JWT_SECRET pour la production !
 
-### Angular
+### Frontend (Angular)
 
-Les fichiers d'environnement sont dans `src/environment/` et pointent vers `/api/` qui sera automatiquement redirigé vers le backend NestJS via le proxy.
+Les fichiers d'environnement sont dans `frontend/src/environment/` et pointent vers `/api/`, redirigé vers le backend via le proxy.
 
 ## Développement
 
 ### Lancer les deux projets ensemble
 
-Pour lancer à la fois Angular et NestJS en mode développement :
+À la racine du projet :
 
 ```bash
 npm run start:all
 ```
 
-Cela lancera :
-- NestJS sur `http://localhost:2023`
-- Angular sur `http://localhost:4200`
+- Backend (NestJS) : `http://localhost:2023`
+- Frontend (Angular) : `http://localhost:4200`
 
 ### Lancer séparément
 
-**Angular uniquement :**
+**Frontend uniquement :**
 ```bash
 npm start
 # ou
-ng serve
+cd frontend && npm start
 ```
 
-**NestJS uniquement :**
+**Backend uniquement :**
 ```bash
 npm run start:api
 # ou
-cd NestJS && npm run start:dev
+cd backend && npm run start:dev
 ```
 
-Une fois les serveurs lancés, ouvrez votre navigateur et naviguez vers `http://localhost:4200/`. L'application se rechargera automatiquement lorsque vous modifierez les fichiers source.
+Ouvrez ensuite `http://localhost:4200/` dans votre navigateur.
 
-## Code scaffolding
+## Build
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+À la racine :
 
 ```bash
-ng generate component component-name
+npm run build       # frontend uniquement
+npm run build:api   # backend uniquement
+npm run build:all   # les deux
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Pour le frontend uniquement depuis son dossier :
 
 ```bash
-ng generate --help
+cd frontend && npm run build
 ```
 
-## Building
-
-To build the project run:
+## Tests
 
 ```bash
-ng build
+npm test            # tests Angular (depuis la racine)
+cd frontend && npm test
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Structure du projet
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+```
+app/
+├── frontend/       # Application Angular
+│   ├── src/
+│   ├── angular.json
+│   └── package.json
+├── backend/        # API NestJS
+│   ├── src/
+│   └── package.json
+├── package.json    # Scripts racine (start:all, install:all, etc.)
+└── README.md
 ```
 
-## Running end-to-end tests
+## Ressources
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Angular CLI](https://angular.dev/tools/cli)
+- [NestJS](https://nestjs.com/)
