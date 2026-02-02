@@ -24,7 +24,10 @@ export class ValidationException extends HttpException{
     }
 
 export const validationErrorToApiCodeResponse = (error: ValidationError): ApiCodeResponse[] => {
-    const keys: string[] = isNil(error.constraints) ? [] : Object.keys(error.constraints as { [type: string]: string });
+    if (isNil(error.constraints)) {
+        return [];
+    }
+    const keys: string[] = Object.keys(error.constraints);
     return keys.map((k: string) => {
         const code = ApiCodeResponse[`${camelToSnake(error.property)}_${camelToSnake(k)}` as keyof typeof ApiCodeResponse];
         return isNil(code) ? ApiCodeResponse.PAYLOAD_PARAM_IS_MISSING : code;
