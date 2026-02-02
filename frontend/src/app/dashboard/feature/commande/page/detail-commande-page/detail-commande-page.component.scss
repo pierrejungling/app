@@ -80,12 +80,11 @@
   align-items: center;
 }
 
-// Toggle attente réponse - version discrète et petite
+// Toggle attente réponse : même ligne que les boutons (dans .header-actions)
 .attente-reponse-toggle-top-right {
-  position: absolute;
-  top: calc(100% + 0.5rem); // Positionner en dessous des boutons d'action
-  right: 0;
-  z-index: 10;
+  display: flex;
+  align-items: center;
+  margin-left: 0.25rem;
 }
 
 .toggle-switch-small {
