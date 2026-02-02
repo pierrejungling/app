@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Credential, Token, SignInPayload, SignupPayload, RefreshTokenPayload } from '../model';
@@ -8,7 +8,6 @@ import { encryptPassword, comparePassword } from '../utils';
 
 @Injectable()
 export class SecurityService {
-    private readonly logger = new Logger(SecurityService.name);
     
     constructor(@InjectRepository(Credential) private readonly repository: Repository<Credential>,
         private readonly tokenService: TokenService) {
@@ -24,7 +23,6 @@ export class SecurityService {
     
     async signIn(payload: SignInPayload, isAdmin: boolean): Promise<Token | null> {
         let result: Credential | null = null;
-        this.logger.log(`Tentative de connexion pour username: ${payload.username}`);
         
         if (payload.socialLogin) {
             if (payload.facebookHash !== null && payload.facebookHash !== undefined && payload.facebookHash.length > 0) {
@@ -35,10 +33,6 @@ export class SecurityService {
         } else {
             // Recherche par username uniquement (pas de filtre isAdmin pour simplifier)
             result = await this.repository.findOneBy({username: payload.username});
-            this.logger.log(`Utilisateur trouvé: ${result ? 'OUI' : 'NON'}`);
-            if (result) {
-                this.logger.log(`Username: ${result.username}, isAdmin: ${result.isAdmin}, password exists: ${!!result.password}`);
-            }
         }
         
         if (result !== null && result !== undefined) {
@@ -47,20 +41,15 @@ export class SecurityService {
             } else {
                 // Vérifier que le mot de passe existe
                 if (!result.password || result.password.length === 0) {
-                    this.logger.error(`L'utilisateur ${payload.username} n'a pas de mot de passe défini`);
                     throw new UserNotFoundException();
                 }
                 const passwordMatch = await comparePassword(payload.password, result.password);
-                this.logger.log(`Comparaison du mot de passe: ${passwordMatch}`);
                 if (passwordMatch) {
                     return this.tokenService.getTokens(result);
-                } else {
-                    this.logger.warn(`Mot de passe incorrect pour l'utilisateur ${payload.username}`);
                 }
             }
         }
         
-        this.logger.warn(`Échec de connexion pour username: ${payload.username}`);
         throw new UserNotFoundException();
     }
     
