@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { FloatingLabelInputComponent, HeaderComponent } from '@shared';
 import { SignInForm } from '../../data/form';
-import { handleFormError, getFormValidationErrors, FormError } from '@shared';
+import { getFormValidationErrors, FormError } from '@shared';
 import { AppRoutes } from '@shared';
 import { ApiService, TokenService } from '@api';
 import { ApiURI } from '@api';
@@ -26,17 +26,44 @@ export class SignInPageComponent {
 
   formGroup!: FormGroup<SignInForm>;
   errors: WritableSignal<FormError[]> = signal([]);
+  submitted = false;
   private readonly apiService: ApiService = inject(ApiService);
   private readonly tokenService: TokenService = inject(TokenService);
 
   constructor(private router: Router) {
     this.initFormGroup();
-    // !!!!!! YOU NEED TO CALL THIS IN CONSTRUCTOR COMPONENT !!!!!!!!! BECAUSE OF TAKEUNTILDESTROYED
-    handleFormError(this.formGroup, this.errors);
   }
 
   get(key: string): FormControl<any> {
     return this.formGroup.get(key) as FormControl<any>;
+  }
+
+  private validationMessage(key: string, value: any): string | null {
+    if (key === 'required') return 'Ce champ est requis';
+    if (key === 'minlength') return `Minimum ${value?.requiredLength ?? 0} caractères`;
+    if (key === 'maxlength') return `Maximum ${value?.requiredLength ?? 0} caractères`;
+    return null;
+  }
+
+  getFieldErrorMessage(controlName: string): string | null {
+    const control = this.get(controlName);
+    if (!control) return null;
+    const serverError = this.errors().find((e) => e.control === controlName);
+    if (serverError && !['required', 'minlength', 'maxlength'].includes(serverError.error)) return serverError.error;
+    if (!control.invalid || (!control.touched && !this.submitted)) return null;
+    const err = control.errors;
+    if (!err) return null;
+    const key = Object.keys(err)[0];
+    return this.validationMessage(key, err[key]) ?? 'Champ invalide';
+  }
+
+  hasFieldError(controlName: string): boolean {
+    return this.getFieldErrorMessage(controlName) != null;
+  }
+
+  getCredentialsError(): string | null {
+    const err = this.errors().find((e) => e.control === 'credentials');
+    return err ? err.error : null;
   }
 
   private initFormGroup(): void {
@@ -101,7 +128,7 @@ export class SignInPageComponent {
         }
       });
     } else {
-      // Trigger validation errors display
+      this.submitted = true;
       this.formGroup.markAllAsTouched();
       this.errors.set(getFormValidationErrors(this.formGroup));
     }

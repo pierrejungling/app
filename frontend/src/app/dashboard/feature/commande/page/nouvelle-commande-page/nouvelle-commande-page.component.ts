@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, AfterViewChecked, inject, signal, Writabl
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { HeaderComponent, FloatingLabelInputComponent, handleFormError, getFormValidationErrors, FormError } from '@shared';
+import { HeaderComponent, FloatingLabelInputComponent, getFormValidationErrors, FormError } from '@shared';
 import { ApiService } from '@api';
 import { ApiURI } from '@api';
 import { NouvelleCommandeForm, CoordonneesContactForm } from '../../data/form/nouvelle-commande.form';
@@ -19,6 +19,7 @@ import { AppRoutes } from '@shared';
 export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterViewChecked {
   formGroup!: FormGroup<NouvelleCommandeForm>;
   errors: WritableSignal<FormError[]> = signal([]);
+  submitted = false;
   showSuccessPopup: WritableSignal<boolean> = signal(false);
   uploadedFiles: File[] = [];
   supportInputFocus: boolean = false;
@@ -27,7 +28,8 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
   
   private readonly apiService: ApiService = inject(ApiService);
   private readonly scrollKey = 'nouvelle-commande-scroll';
-  
+  private readonly clearScrollKey = 'nouvelle-commande-clear-scroll';
+
   // Options disponibles
   couleursDisponibles: Couleur[] = [
     Couleur.NOIR,
@@ -77,23 +79,26 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
 
   constructor(private router: Router) {
     this.initFormGroup();
-    handleFormError(this.formGroup, this.errors);
   }
 
   ngOnInit(): void {
-    // Sauvegarder la position de scroll avant le rechargement
     window.addEventListener('beforeunload', this.saveScrollPosition);
-    // Initialiser le pays par défaut
+    // Arrivée depuis le dashboard : ne pas restaurer le scroll (éviter le scroll forcé en bas)
+    try {
+      if (sessionStorage.getItem(this.clearScrollKey) === '1') {
+        sessionStorage.removeItem(this.clearScrollKey);
+        sessionStorage.removeItem(this.scrollKey);
+        this.scrollRestored = true;
+      }
+    } catch {}
     this.formGroup.get('coordonnees_contact.pays')?.setValue('Belgique');
   }
 
   ngAfterViewChecked(): void {
-    // Restaurer la position de scroll après le chargement
-    if (!this.scrollRestored) {
-      const savedScroll = sessionStorage.getItem(this.scrollKey);
-      if (savedScroll) {
-        this.restoreScrollPosition(parseInt(savedScroll, 10));
-      }
+    if (this.scrollRestored) return;
+    const savedScroll = sessionStorage.getItem(this.scrollKey);
+    if (savedScroll) {
+      this.restoreScrollPosition(parseInt(savedScroll, 10));
     }
   }
 
@@ -152,6 +157,50 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
   getCoordonneeControl(key: string): FormControl<any> {
     const control = this.coordonneesContact.get(key);
     return control as FormControl<any>;
+  }
+
+  private validationMessage(key: string, value: any): string | null {
+    if (key === 'required') return 'Ce champ est requis';
+    if (key === 'minlength') return `Minimum ${value?.requiredLength ?? 0} caractères`;
+    if (key === 'maxlength') return `Maximum ${value?.requiredLength ?? 0} caractères`;
+    if (key === 'min') return `Minimum ${value?.min ?? 0}`;
+    if (key === 'email') return 'Adresse email invalide';
+    return null;
+  }
+
+  getControlByPath(path: string): FormControl<any> | null {
+    const c = this.formGroup.get(path);
+    return c instanceof FormControl ? c : null;
+  }
+
+  getFieldErrorMessage(controlPath: string): string | null {
+    const control = this.getControlByPath(controlPath);
+    if (!control) return null;
+    const serverError = this.errors().find((e) => e.control === controlPath);
+    if (serverError && !['required', 'minlength', 'maxlength', 'min', 'email'].includes(serverError.error)) return serverError.error;
+    if (!control.invalid || (!control.touched && !this.submitted)) return null;
+    const err = control.errors;
+    if (!err) return null;
+    const key = Object.keys(err)[0];
+    return this.validationMessage(key, err[key]) ?? 'Champ invalide';
+  }
+
+  hasFieldError(controlPath: string): boolean {
+    return this.getFieldErrorMessage(controlPath) != null;
+  }
+
+  private getAllFormErrors(): FormError[] {
+    const top = getFormValidationErrors(this.formGroup);
+    const coord = getFormValidationErrors(this.coordonneesContact).map((e) => ({
+      ...e,
+      control: 'coordonnees_contact.' + e.control
+    }));
+    return [...top, ...coord];
+  }
+
+  getGeneralError(): string | null {
+    const err = this.errors().find((e) => e.control === 'commande');
+    return err ? err.error : null;
   }
 
   private initFormGroup(): void {
@@ -361,6 +410,9 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
       this.apiService.post(ApiURI.AJOUTER_COMMANDE, payload).subscribe({
         next: (response) => {
           if (response.result) {
+            try {
+              sessionStorage.removeItem(this.scrollKey);
+            } catch {}
             this.showSuccessPopup.set(true);
           } else {
             this.errors.set([{
@@ -380,8 +432,9 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
         }
       });
     } else {
+      this.submitted = true;
       this.formGroup.markAllAsTouched();
-      this.errors.set(getFormValidationErrors(this.formGroup));
+      this.errors.set(this.getAllFormErrors());
     }
   }
 
@@ -402,11 +455,14 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  private readonly entryFromKey = 'commandes-en-cours-entry-from';
+
   onViewCommandes(): void {
     this.showSuccessPopup.set(false);
-    this.router.navigate([AppRoutes.COMMANDES_EN_COURS], {
-      queryParams: { from: 'nouvelle' }
-    });
+    try {
+      sessionStorage.setItem(this.entryFromKey, 'nouvelle');
+    } catch {}
+    this.router.navigate([AppRoutes.COMMANDES_EN_COURS]);
   }
 
   onSupportFocus(event: Event): void {

@@ -188,9 +188,9 @@
       height: 44px;
     }
 
+    // Masquer "Se déconnecter" sur mobile (déplacé dans la page Paramètres)
     &__logout-btn {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.75rem;
+      display: none !important;
     }
   }
 }
@@ -203,11 +203,6 @@
 
     &__logo-text {
       font-size: 0.85rem;
-    }
-
-    &__logout-btn {
-      padding: 0.5rem 0.5rem;
-      font-size: 0.7rem;
     }
   }
 }

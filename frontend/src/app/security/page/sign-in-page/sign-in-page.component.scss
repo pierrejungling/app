@@ -91,6 +91,19 @@
     }
   }
 
+  .input-wrapper {
+    &.field-wrapper--error ::ng-deep .floating-input {
+      border-color: var(--color-error, #dc3545);
+      box-shadow: 0 0 0 1px var(--color-error, #dc3545);
+    }
+  }
+
+  .field-error {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--color-error, #dc3545);
+  }
+
   form {
     width: 100%;
     max-width: 400px;

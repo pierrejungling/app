@@ -145,6 +145,20 @@ export class DashboardHomePageComponent implements OnInit {
     this.tryNextLogo();
   }
 
+  /** Indique que l’on arrive sur « Commandes en cours » depuis cette page (sections fermées au chargement). */
+  setEntryFromForCommandesEnCours(value: string): void {
+    try {
+      sessionStorage.setItem('commandes-en-cours-entry-from', value);
+    } catch {}
+  }
+
+  /** Indique que l’on arrive sur « Nouvelle commande » depuis le dashboard (pas de restauration de scroll). */
+  clearScrollForNouvelleCommande(): void {
+    try {
+      sessionStorage.setItem('nouvelle-commande-clear-scroll', '1');
+    } catch {}
+  }
+
   tryNextLogo(): void {
     const possibleLogos = [
       'assets/images/Logo/La Gravisterie avec noir txt_N.svg',

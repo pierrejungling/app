@@ -20,7 +20,7 @@
         *ngFor="let card of dashboardCards; let i = index"
         class="dashboard-card"
         [routerLink]="card.route"
-        [queryParams]="card.route.includes('en-cours') ? { from: 'dashboard' } : null"
+        (click)="card.route.includes('en-cours') && setEntryFromForCommandesEnCours('dashboard'); card.route.includes('nouvelle') && clearScrollForNouvelleCommande()"
         [style.animation-delay]="(i * 0.1) + 's'">
         <div class="dashboard-card__icon">{{ card.icon }}</div>
         <h3 class="dashboard-card__title">{{ card.title }}</h3>

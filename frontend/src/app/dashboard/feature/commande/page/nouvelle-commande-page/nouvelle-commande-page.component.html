@@ -24,31 +24,33 @@
       </div>
     </div>
     
-    <div class="error-area" *ngIf="errors().length > 0">
-      <p *ngFor="let error of errors()">{{error.control}}: {{error.error}}</p>
+    <div class="error-area error-area--general" *ngIf="getGeneralError()">
+      <p>{{ getGeneralError() }}</p>
     </div>
 
-    <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+    <form id="nouvelleCommandeForm" [formGroup]="formGroup" (ngSubmit)="onSubmit()">
       
       <!-- Informations de la commande -->
       <section class="form-section">
         <h2 class="section-title">Informations de la commande</h2>
         
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('nom_commande')">
           <app-floating-label-input
             [label]="'Nom / Intitulé de la commande'"
             [control]="get('nom_commande')"
             [formGroup]="formGroup">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('nom_commande')">{{ getFieldErrorMessage('nom_commande') }}</p>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('deadline')">
           <app-floating-label-input
             [label]="'Deadline'"
             [control]="get('deadline')"
             [formGroup]="formGroup"
             type="date">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('deadline')">{{ getFieldErrorMessage('deadline') }}</p>
         </div>
       </section>
 
@@ -57,40 +59,44 @@
         <h2 class="section-title">Coordonnées de contact</h2>
         
         <div class="form-row">
-          <div class="input-wrapper">
+          <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.nom')">
             <app-floating-label-input
               [label]="'Nom'"
               [control]="getCoordonneeControl('nom')"
               [formGroup]="coordonneesContact">
             </app-floating-label-input>
+            <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.nom')">{{ getFieldErrorMessage('coordonnees_contact.nom') }}</p>
           </div>
           
-          <div class="input-wrapper">
+          <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.prenom')">
             <app-floating-label-input
               [label]="'Prénom'"
               [control]="getCoordonneeControl('prenom')"
               [formGroup]="coordonneesContact">
             </app-floating-label-input>
+            <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.prenom')">{{ getFieldErrorMessage('coordonnees_contact.prenom') }}</p>
           </div>
         </div>
 
         <div class="form-row">
-          <div class="input-wrapper">
+          <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.telephone')">
             <app-floating-label-input
               [label]="'Téléphone'"
               [control]="getCoordonneeControl('telephone')"
               [formGroup]="coordonneesContact"
               type="tel">
             </app-floating-label-input>
+            <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.telephone')">{{ getFieldErrorMessage('coordonnees_contact.telephone') }}</p>
           </div>
           
-          <div class="input-wrapper">
+          <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.mail')">
             <app-floating-label-input
               [label]="'Email'"
               [control]="getCoordonneeControl('mail')"
               [formGroup]="coordonneesContact"
               type="email">
             </app-floating-label-input>
+            <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.mail')">{{ getFieldErrorMessage('coordonnees_contact.mail') }}</p>
           </div>
         </div>
 
@@ -98,47 +104,52 @@
         <div class="address-section">
           <label class="section-subtitle">Adresse</label>
           
-          <div class="input-wrapper">
+          <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.rue')">
             <app-floating-label-input
               [label]="'Rue et numéro'"
               [control]="getCoordonneeControl('rue')"
               [formGroup]="coordonneesContact">
             </app-floating-label-input>
+            <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.rue')">{{ getFieldErrorMessage('coordonnees_contact.rue') }}</p>
           </div>
 
           <div class="form-row">
-            <div class="input-wrapper">
+            <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.code_postal')">
               <app-floating-label-input
                 [label]="'Code postal'"
                 [control]="getCoordonneeControl('code_postal')"
                 [formGroup]="coordonneesContact">
               </app-floating-label-input>
+              <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.code_postal')">{{ getFieldErrorMessage('coordonnees_contact.code_postal') }}</p>
             </div>
             
-            <div class="input-wrapper">
+            <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.ville')">
               <app-floating-label-input
                 [label]="'Ville'"
                 [control]="getCoordonneeControl('ville')"
                 [formGroup]="coordonneesContact">
               </app-floating-label-input>
+              <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.ville')">{{ getFieldErrorMessage('coordonnees_contact.ville') }}</p>
             </div>
           </div>
 
-          <div class="input-wrapper">
+          <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.pays')">
             <app-floating-label-input
               [label]="'Pays'"
               [control]="getCoordonneeControl('pays')"
               [formGroup]="coordonneesContact">
             </app-floating-label-input>
+            <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.pays')">{{ getFieldErrorMessage('coordonnees_contact.pays') }}</p>
           </div>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('coordonnees_contact.tva')">
           <app-floating-label-input
             [label]="'TVA'"
             [control]="getCoordonneeControl('tva')"
             [formGroup]="coordonneesContact">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('coordonnees_contact.tva')">{{ getFieldErrorMessage('coordonnees_contact.tva') }}</p>
         </div>
 
         <div class="input-wrapper">
@@ -175,21 +186,23 @@
       <section class="form-section">
         <h2 class="section-title">Dimensions et support</h2>
         
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('dimensions_souhaitees')">
           <app-floating-label-input
             [label]="'Dimensions souhaitées'"
             [control]="get('dimensions_souhaitees')"
             [formGroup]="formGroup">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('dimensions_souhaitees')">{{ getFieldErrorMessage('dimensions_souhaitees') }}</p>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('quantité')">
           <app-floating-label-input
             [label]="'Quantité'"
             [control]="get('quantité')"
             [formGroup]="formGroup"
             type="number">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('quantité')">{{ getFieldErrorMessage('quantité') }}</p>
         </div>
 
         <div class="input-wrapper">
@@ -249,20 +262,22 @@
           </div>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('police_ecriture')">
           <app-floating-label-input
             [label]="'Police d\'écriture'"
             [control]="get('police_ecriture')"
             [formGroup]="formGroup">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('police_ecriture')">{{ getFieldErrorMessage('police_ecriture') }}</p>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('texte_personnalisation')">
           <app-floating-label-input
             [label]="'Texte de la personnalisation'"
             [control]="get('texte_personnalisation')"
             [formGroup]="formGroup">
           </app-floating-label-input>
+          <p class="field-error" *ngIf="getFieldErrorMessage('texte_personnalisation')">{{ getFieldErrorMessage('texte_personnalisation') }}</p>
         </div>
       </section>
 
@@ -328,7 +343,7 @@
         </div>
       </section>
 
-      <!-- Boutons d'action -->
+      <!-- Boutons d'action (desktop) -->
       <div class="form-actions">
         <button type="button" class="btn-secondary" (click)="onCancel()">Annuler</button>
         <button type="submit" class="btn-primary" [disabled]="!isFormValid()">
@@ -337,4 +352,12 @@
       </div>
     </form>
   </div>
+
+  <!-- Footer fixe mobile/tablette : ANNULER + Créer la commande -->
+  <footer class="form-actions-footer">
+    <button type="button" class="btn-footer btn-secondary" (click)="onCancel()">Annuler</button>
+    <button type="submit" form="nouvelleCommandeForm" class="btn-footer btn-primary" [disabled]="!isFormValid()">
+      Créer la commande
+    </button>
+  </footer>
 </div>

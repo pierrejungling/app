@@ -2,7 +2,7 @@
   min-height: 100vh;
   background-color: #f5f5f5;
   padding: 2rem;
-  padding-top: 90px; // Espace pour le header fixe
+  padding-top: 62px; // Espace entre header et contenu
 }
 
 .commandes-terminees-container {
@@ -114,8 +114,10 @@
     font-weight: 600;
     margin: 0 0 0.5rem 0;
     color: #333;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border-bottom: none;
+    background: rgba(0, 0, 0, 0.04);
   }
 }
 
@@ -132,7 +134,7 @@
 .commande-card {
   background: white;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -230,7 +232,7 @@
 @media (max-width: 768px) {
   .commandes-terminees-wrapper {
     padding: 1rem var(--spacing-sm);
-    padding-top: 70px;
+    padding-top: 56px;
   }
 
   .commandes-terminees-container {
@@ -284,7 +286,7 @@
 @media (max-width: 480px) {
   .commandes-terminees-wrapper {
     padding: 0.75rem 0.5rem;
-    padding-top: 60px;
+    padding-top: 50px;
   }
 
   .page-title {

@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <form [formGroup]="formGroup" *ngIf="formGroup" (ngSubmit)="onSave()">
+    <form id="detailCommandeForm" [formGroup]="formGroup" *ngIf="formGroup" (ngSubmit)="onSave()">
       
       <!-- Informations de la commande -->
       <section class="form-section">
@@ -305,7 +305,7 @@
         </div>
       </section>
 
-      <!-- Boutons d'action en mode édition -->
+      <!-- Boutons d'action en mode édition (desktop) -->
       <div class="form-actions" *ngIf="isEditMode()">
         <button type="button" class="btn-cancel" (click)="onCancel()">Annuler</button>
         <button type="submit" class="btn-save" [disabled]="!formGroup.valid">Enregistrer</button>
@@ -335,6 +335,38 @@
       </div>
     </section>
   </div>
+
+  <!-- Footer fixe mobile/tablette : Afficher prix, Supprimer, Modifier / Annuler+Enregistrer, + Toggle attente réponse -->
+  <footer class="detail-actions-footer" *ngIf="!isLoading() && commande() && formGroup">
+    <div class="detail-actions-footer__buttons">
+      <div class="detail-actions-footer__row">
+        <button type="button" class="btn-footer btn-footer-prix" (click)="togglePrixFields()">
+          {{ showPrixFields() ? '💰 Masquer prix' : '💰 Afficher prix' }}
+        </button>
+        <button type="button" class="btn-footer btn-footer-delete" (click)="openDeleteConfirm()">🗑️ Supprimer</button>
+      </div>
+      <div class="detail-actions-footer__row">
+        <ng-container *ngIf="!isEditMode()">
+          <button type="button" class="btn-footer btn-footer-edit" (click)="toggleEditMode()">✏️ Modifier</button>
+        </ng-container>
+        <ng-container *ngIf="isEditMode()">
+          <button type="button" class="btn-footer btn-footer-cancel" (click)="onCancel()">Annuler</button>
+          <button type="submit" form="detailCommandeForm" class="btn-footer btn-footer-save" [disabled]="!formGroup.valid">Enregistrer</button>
+        </ng-container>
+      </div>
+    </div>
+    <div class="detail-actions-footer__toggle">
+      <label class="toggle-switch-small toggle-switch-small--footer" [class.toggle-vert]="get('attente_reponse').value" [class.toggle-rouge]="!get('attente_reponse').value">
+        <input
+          type="checkbox"
+          [formControl]="get('attente_reponse')"
+          (change)="onAttenteReponseChange()"
+          class="toggle-input">
+        <span class="toggle-slider"></span>
+        <span class="toggle-label-small">{{ get('attente_reponse').value ? 'Rien à faire' : 'Client attend' }}</span>
+      </label>
+    </div>
+  </footer>
 
   <div class="loading-area" *ngIf="isLoading()">
     <p>Chargement de la commande...</p>

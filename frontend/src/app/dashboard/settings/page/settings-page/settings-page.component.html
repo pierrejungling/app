@@ -17,41 +17,50 @@
           <p class="success-message">{{ successMessage }}</p>
         </div>
 
-        <div class="error-area" *ngIf="errors().length > 0">
-          <p *ngFor="let error of errors()">{{ error.control }}: {{ error.error }}</p>
-          <p *ngIf="get('confirmPassword')?.hasError('passwordMismatch') && get('confirmPassword')?.touched">
-            Les nouveaux mots de passe ne correspondent pas
-          </p>
+        <div class="error-area error-area--general" *ngIf="getGeneralError()">
+          <p>{{ getGeneralError() }}</p>
         </div>
 
         <form [formGroup]="formGroup" class="settings-form">
           <div class="settings-form__fields">
-            <app-floating-label-input
-              [label]="'Nom d\'utilisateur'"
-              [control]="get('username')"
-              [formGroup]="formGroup">
-            </app-floating-label-input>
+            <div class="field-wrapper" [class.field-wrapper--error]="hasFieldError('username')">
+              <app-floating-label-input
+                [label]="'Nom d\'utilisateur'"
+                [control]="get('username')"
+                [formGroup]="formGroup">
+              </app-floating-label-input>
+              <p class="field-error" *ngIf="getFieldErrorMessage('username')">{{ getFieldErrorMessage('username') }}</p>
+            </div>
 
-            <app-floating-label-input
-              [label]="'Mot de passe actuel'"
-              [control]="get('currentPassword')"
-              [formGroup]="formGroup"
-              type="password">
-            </app-floating-label-input>
+            <div class="field-wrapper" [class.field-wrapper--error]="hasFieldError('currentPassword')">
+              <app-floating-label-input
+                [label]="'Mot de passe actuel'"
+                [control]="get('currentPassword')"
+                [formGroup]="formGroup"
+                type="password">
+              </app-floating-label-input>
+              <p class="field-error" *ngIf="getFieldErrorMessage('currentPassword')">{{ getFieldErrorMessage('currentPassword') }}</p>
+            </div>
 
-            <app-floating-label-input
-              [label]="'Nouveau mot de passe'"
-              [control]="get('newPassword')"
-              [formGroup]="formGroup"
-              type="password">
-            </app-floating-label-input>
+            <div class="field-wrapper" [class.field-wrapper--error]="hasFieldError('newPassword')">
+              <app-floating-label-input
+                [label]="'Nouveau mot de passe'"
+                [control]="get('newPassword')"
+                [formGroup]="formGroup"
+                type="password">
+              </app-floating-label-input>
+              <p class="field-error" *ngIf="getFieldErrorMessage('newPassword')">{{ getFieldErrorMessage('newPassword') }}</p>
+            </div>
 
-            <app-floating-label-input
-              [label]="'Confirmer le nouveau mot de passe'"
-              [control]="get('confirmPassword')"
-              [formGroup]="formGroup"
-              type="password">
-            </app-floating-label-input>
+            <div class="field-wrapper" [class.field-wrapper--error]="hasFieldError('confirmPassword')">
+              <app-floating-label-input
+                [label]="'Confirmer le nouveau mot de passe'"
+                [control]="get('confirmPassword')"
+                [formGroup]="formGroup"
+                type="password">
+              </app-floating-label-input>
+              <p class="field-error" *ngIf="getFieldErrorMessage('confirmPassword')">{{ getFieldErrorMessage('confirmPassword') }}</p>
+            </div>
           </div>
 
           <div class="settings-form__actions">
@@ -63,6 +72,19 @@
             </button>
           </div>
         </form>
+      </div>
+
+      <div class="settings-section settings-section--logout">
+        <h2 class="settings-section__title">Déconnexion</h2>
+        <p class="settings-section__description">
+          Fermer votre session et quitter l'application
+        </p>
+        <button
+          type="button"
+          class="btn-logout"
+          (click)="logout()">
+          Se déconnecter
+        </button>
       </div>
     </div>
   </div>

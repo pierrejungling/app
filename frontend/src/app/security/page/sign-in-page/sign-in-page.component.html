@@ -17,31 +17,32 @@
     <p class="success-message">{{successMessage}}</p>
   </div>
   
-  <div class="error-area" *ngIf="errors().length > 0">
-    <p>{{'security-feature.sign-in-page.error.description' | translate: {count: errors().length} }}</p>
-    <p *ngFor="let error of errors()">{{error.control}} {{error.error}}</p>
+  <div class="error-area error-area--general" *ngIf="getCredentialsError()">
+    <p>{{ getCredentialsError() }}</p>
   </div>
 
   <form [formGroup]="formGroup">
 
     <section id="content">
-      <div class="input-wrapper">
-      <app-floating-label-input
-        [label]="'Nom d\'utilisateur'"
-        [control]="get('username')"
-        [formGroup]="formGroup">
-      </app-floating-label-input>
-        <p class="input-hint">Entre 1 et 20 caractères</p>
+      <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('username')">
+        <app-floating-label-input
+          [label]="'Nom d\'utilisateur'"
+          [control]="get('username')"
+          [formGroup]="formGroup">
+        </app-floating-label-input>
+        <p class="field-error" *ngIf="getFieldErrorMessage('username')">{{ getFieldErrorMessage('username') }}</p>
+        <p class="input-hint" *ngIf="!getFieldErrorMessage('username')">Entre 1 et 20 caractères</p>
       </div>
       
-      <div class="input-wrapper">
-      <app-floating-label-input
-        [label]="'Mot de passe'"
-        [control]="get('password')"
-        [formGroup]="formGroup"
-        type="password">
-      </app-floating-label-input>
-        <p class="input-hint">Entre 1 et 20 caractères</p>
+      <div class="input-wrapper" [class.field-wrapper--error]="hasFieldError('password')">
+        <app-floating-label-input
+          [label]="'Mot de passe'"
+          [control]="get('password')"
+          [formGroup]="formGroup"
+          type="password">
+        </app-floating-label-input>
+        <p class="field-error" *ngIf="getFieldErrorMessage('password')">{{ getFieldErrorMessage('password') }}</p>
+        <p class="input-hint" *ngIf="!getFieldErrorMessage('password')">Entre 1 et 20 caractères</p>
       </div>
     </section>
 

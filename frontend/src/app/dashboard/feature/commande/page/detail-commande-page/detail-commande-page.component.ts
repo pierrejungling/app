@@ -112,13 +112,14 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     return null;
   }
 
+  private readonly detailReturnPageKey = 'detail-return-page';
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    // Récupérer le paramètre de requête 'from' pour savoir d'où on vient
-    const from = this.route.snapshot.queryParams['from'];
-    if (from === 'terminees') {
-      this.returnPage = 'terminees';
-    } else {
+    try {
+      const stored = sessionStorage.getItem(this.detailReturnPageKey);
+      this.returnPage = stored === 'terminees' ? 'terminees' : 'en-cours';
+    } catch {
       this.returnPage = 'en-cours';
     }
     

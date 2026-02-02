@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, AfterViewChecked, inject, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { HeaderComponent } from '@shared';
 import { ApiService } from '@api';
 import { ApiURI } from '@api';
@@ -19,13 +19,16 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
   commandes: WritableSignal<Commande[]> = signal([]);
   isLoading: WritableSignal<boolean> = signal(false);
   private scrollRestored: boolean = false;
+  /** Ne décider (fermer tout / restaurer) qu'au premier chargement ; après, garder l'état des sections. */
+  private initialExpandedStateApplied: boolean = false;
   
   private readonly apiService: ApiService = inject(ApiService);
   private readonly router: Router = inject(Router);
-  private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly scrollKey = 'commandes-en-cours-scroll';
   private readonly expandedSectionsKey = 'commandes-en-cours-expanded-sections';
   private readonly restoreExpandedKey = 'commandes-en-cours-restore-expanded';
+  private readonly entryFromKey = 'commandes-en-cours-entry-from';
+  private readonly detailReturnPageKey = 'detail-return-page';
 
   // Ordre des colonnes de statut
   readonly statuts: StatutCommande[] = [
@@ -96,58 +99,55 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
     }
   }
 
-  /** Au chargement : fermer tout si on vient du dashboard / terminées / nouvelle ; sinon restaurer si rechargement ou retour depuis détail */
+  /** Au chargement : fermer tout si on vient du dashboard/terminées/nouvelle (sessionStorage) ; sinon restaurer les sections. */
   private setInitialExpandedSections(): void {
-    const from = this.route.snapshot.queryParamMap.get('from');
-
-    // Rechargement de la page « commandes en cours » → restaurer les chevrons ouverts
-    const nav = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
-    if (nav?.type === 'reload') {
-      this.restoreExpandedSections();
-      return;
-    }
-
-    // Arrivée depuis dashboard, commandes terminées ou nouvelle commande → tout fermer
-    if (from === 'dashboard' || from === 'terminees' || from === 'nouvelle') {
-      this.expandedSections.set(new Set<StatutCommande>());
-      this.saveExpandedSections(new Set<StatutCommande>());
-      return;
-    }
-
-    // Retour depuis la page détail (flag posé avant la navigation) → restaurer les chevrons
     try {
-      if (sessionStorage.getItem(this.restoreExpandedKey) === '1') {
-        sessionStorage.removeItem(this.restoreExpandedKey);
-        this.restoreExpandedSections();
+      const entryFrom = sessionStorage.getItem(this.entryFromKey);
+      if (entryFrom === 'dashboard' || entryFrom === 'terminees' || entryFrom === 'nouvelle') {
+        sessionStorage.removeItem(this.entryFromKey);
+        this.expandedSections.set(new Set<StatutCommande>());
+        this.saveExpandedSections(new Set<StatutCommande>());
         return;
       }
     } catch {
       // ignorer
     }
 
-    // Autre cas (ex. lien direct) → tout fermé
-    this.expandedSections.set(new Set<StatutCommande>());
+    try {
+      if (sessionStorage.getItem(this.restoreExpandedKey) === '1') {
+        sessionStorage.removeItem(this.restoreExpandedKey);
+      }
+    } catch {
+      // ignorer
+    }
+
+    this.restoreExpandedSections();
   }
 
   private restoreExpandedSections(): void {
     try {
       const raw = sessionStorage.getItem(this.expandedSectionsKey);
-      if (raw) {
-        const parsed: string[] = JSON.parse(raw);
-        const valid = new Set<StatutCommande>();
-        const statutSet = new Set(this.statuts);
-        for (const s of parsed) {
-          if (statutSet.has(s as StatutCommande)) {
-            valid.add(s as StatutCommande);
-          }
-        }
-        this.expandedSections.set(valid);
+      if (!raw) {
+        this.expandedSections.set(new Set<StatutCommande>());
         return;
       }
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        this.expandedSections.set(new Set<StatutCommande>());
+        return;
+      }
+      // Whitelist : seules les valeurs de statuts (strings) sont acceptées (fiable en prod)
+      const allowed = new Set<string>(this.statuts as unknown as string[]);
+      const valid = new Set<StatutCommande>();
+      for (const s of parsed) {
+        if (typeof s === 'string' && allowed.has(s)) {
+          valid.add(s as StatutCommande);
+        }
+      }
+      this.expandedSections.set(valid);
     } catch {
-      // garder fermé
+      this.expandedSections.set(new Set<StatutCommande>());
     }
-    this.expandedSections.set(new Set<StatutCommande>());
   }
 
   hasAnyCommandeEnCours(): boolean {
@@ -155,8 +155,7 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
   }
 
   ngOnInit(): void {
-    // Sauvegarder la position de scroll avant le rechargement
-    window.addEventListener('beforeunload', this.saveScrollPosition);
+    window.addEventListener('beforeunload', this.onBeforeUnload);
     this.loadCommandes();
   }
 
@@ -207,12 +206,12 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
   }
 
   ngOnDestroy(): void {
-    window.removeEventListener('beforeunload', this.saveScrollPosition);
+    window.removeEventListener('beforeunload', this.onBeforeUnload);
   }
 
-  private saveScrollPosition = (): void => {
+  private onBeforeUnload = (): void => {
     sessionStorage.setItem(this.scrollKey, window.scrollY.toString());
-  }
+  };
 
   loadCommandes(): void {
     this.isLoading.set(true);
@@ -220,10 +219,13 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
       next: (response) => {
         if (response.result && response.data) {
           this.commandes.set(response.data);
-          this.setInitialExpandedSections();
+          // Ne réappliquer la logique (fermer tout / restaurer) qu'au premier chargement
+          if (!this.initialExpandedStateApplied) {
+            this.setInitialExpandedSections();
+            this.initialExpandedStateApplied = true;
+          }
         }
         this.isLoading.set(false);
-        // Réinitialiser le flag pour permettre la restauration après le chargement
         this.scrollRestored = false;
       },
       error: (error) => {
@@ -433,12 +435,11 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
   onCommandeClick(commande: Commande): void {
     try {
       sessionStorage.setItem(this.restoreExpandedKey, '1');
+      sessionStorage.setItem(this.detailReturnPageKey, 'en-cours');
     } catch {
       // ignorer
     }
-    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'detail', commande.id_commande], {
-      queryParams: { from: 'en-cours' }
-    });
+    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'detail', commande.id_commande]);
   }
 
   navigateToTerminees(): void {

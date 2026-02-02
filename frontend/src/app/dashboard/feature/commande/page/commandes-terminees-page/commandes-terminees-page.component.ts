@@ -134,16 +134,21 @@ export class CommandesTermineesPageComponent implements OnInit, OnDestroy, After
     });
   }
 
+  private readonly entryFromKey = 'commandes-en-cours-entry-from';
+  private readonly detailReturnPageKey = 'detail-return-page';
+
   onCommandeClick(commande: Commande): void {
-    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'detail', commande.id_commande], {
-      queryParams: { from: 'terminees' }
-    });
+    try {
+      sessionStorage.setItem(this.detailReturnPageKey, 'terminees');
+    } catch {}
+    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'detail', commande.id_commande]);
   }
 
   navigateToEnCours(): void {
-    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'en-cours'], {
-      queryParams: { from: 'terminees' }
-    });
+    try {
+      sessionStorage.setItem(this.entryFromKey, 'terminees');
+    } catch {}
+    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'en-cours']);
   }
 
   getClientName(client: Commande['client']): string {

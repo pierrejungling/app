@@ -1,6 +1,6 @@
 .dashboard-home {
   min-height: 100vh;
-  padding-top: 80px; // Pour compenser le header fixe
+  padding-top: 40px; // Espace réduit entre header et contenu
   padding-bottom: var(--spacing-xl);
   background: var(--color-background);
   animation: fadeIn 0.5s ease-in;
@@ -14,12 +14,12 @@
   &__logo-section {
     text-align: center;
     margin-bottom: var(--spacing-xl);
-    padding: var(--spacing-xl) 0;
+    padding: 0 0 var(--spacing-xl) 0;
     animation: slideDown 0.6s ease-out;
   }
 
   &__logo {
-    max-width: 400px;
+    max-width: 580px;
     width: 100%;
     height: auto;
     margin-bottom: var(--spacing-md);
@@ -196,7 +196,7 @@
 // Responsive
 @media (max-width: 768px) {
   .dashboard-home {
-    padding-top: 70px;
+    padding-top: 36px;
     padding-bottom: var(--spacing-lg);
 
     &__container {
@@ -209,7 +209,7 @@
     }
 
     &__logo {
-      max-width: 250px;
+      max-width: 360px;
     }
 
     &__title {
@@ -251,7 +251,7 @@
 
 @media (max-width: 480px) {
   .dashboard-home {
-    padding-top: 60px;
+    padding-top: 34px;
     padding-left: 0;
     padding-right: 0;
 
@@ -260,7 +260,7 @@
     }
 
     &__logo {
-      max-width: 200px;
+      max-width: 280px;
     }
 
     &__title {

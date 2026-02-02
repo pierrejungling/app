@@ -2,7 +2,7 @@
   min-height: 100vh;
   background-color: #f5f5f5;
   padding: 2rem;
-  padding-top: 90px; // Espace pour le header fixe
+  padding-top: 50px; // Espace entre header et carte détail
 }
 
 .detail-commande-container {
@@ -30,11 +30,11 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
   gap: 1rem;
   position: relative;
-  padding-bottom: 2.5rem; // Espace pour le toggle en dessous
+  padding-bottom: 0.5rem;
 }
 
 .header-title-section {
@@ -210,8 +210,18 @@
 
 .form-section {
   margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 1.5rem 1.5rem 2rem;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  background: rgba(0, 0, 0, 0.02);
+
+  &:first-of-type {
+    padding-top: 0.5rem; // Moins d'espace sous le titre "Tryptique Baobab"
+  }
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
 }
 
 .section-title {
@@ -219,6 +229,8 @@
   font-weight: 600;
   margin: 0 0 1.5rem 0;
   color: #333;
+  padding: 0.5rem 0;
+  border-radius: 8px;
 }
 
 .subsection-title {
@@ -510,7 +522,7 @@
 .address-section {
   background: #f8f9fa;
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: 12px;
   margin-bottom: 1.5rem;
 }
 
@@ -582,10 +594,17 @@
   cursor: not-allowed;
 }
 
+// Footer fixe mobile/tablette : masqué sur desktop
+.detail-actions-footer {
+  display: none;
+}
+
 .statuts-section {
   margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 2px solid #e0e0e0;
+  padding: 2rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .statuts-list {
@@ -798,23 +817,166 @@
   }
 }
 
+// Responsive tablette + smartphone : footer fixe avec boutons
+@media (max-width: 1024px) {
+  .detail-commande-wrapper {
+    padding-bottom: 200px; // Espace pour scroll jusqu'en bas sans que le footer masque le contenu
+  }
+
+  .detail-commande-container {
+    padding-bottom: 3rem; // Marge sous le dernier bloc (statuts) avant le footer
+  }
+
+  .header-actions {
+    display: none;
+  }
+
+  .attente-reponse-toggle-top-right {
+    display: none;
+  }
+
+  .form-actions {
+    display: none;
+  }
+
+  .detail-actions-footer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
+    background: var(--color-secondary, #fff);
+    border-top: 1px solid var(--color-border-dark, #dee2e6);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .detail-actions-footer__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .detail-actions-footer__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+  }
+
+  .detail-actions-footer__row .btn-footer {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .detail-actions-footer__toggle {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border-dark, #e0e0e0);
+  }
+
+  .detail-actions-footer .toggle-switch-small--footer {
+    opacity: 1;
+  }
+
+  .detail-actions-footer .toggle-switch-small--footer .toggle-label-small {
+    font-size: 0.8rem;
+  }
+
+  .detail-actions-footer .btn-footer {
+    flex: 1;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+
+  .detail-actions-footer .btn-footer-prix {
+    background: white;
+    color: #333;
+    border-color: #dee2e6;
+  }
+  .detail-actions-footer .btn-footer-prix:hover {
+    background: #f8f9fa;
+    border-color: #ced4da;
+  }
+
+  .detail-actions-footer .btn-footer-delete {
+    background: #fff5f5;
+    border-color: #dc3545;
+    color: #dc3545;
+  }
+  .detail-actions-footer .btn-footer-delete:hover {
+    background: #dc3545;
+    color: white;
+  }
+
+  .detail-actions-footer .btn-footer-edit {
+    background: white;
+    color: #333;
+    border-color: #dee2e6;
+  }
+  .detail-actions-footer .btn-footer-edit:hover {
+    background: #f8f9fa;
+    border-color: #ced4da;
+  }
+
+  .detail-actions-footer .btn-footer-cancel {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+  }
+  .detail-actions-footer .btn-footer-cancel:hover {
+    background: #5a6268;
+  }
+
+  .detail-actions-footer .btn-footer-save {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+  }
+  .detail-actions-footer .btn-footer-save:hover:not(:disabled) {
+    background: #218838;
+  }
+  .detail-actions-footer .btn-footer-save:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .detail-commande-wrapper {
     padding: 1rem var(--spacing-sm);
-    padding-top: 70px;
+    padding-top: 50px;
+    padding-bottom: 200px;
   }
 
   .detail-commande-container {
     padding: 1.5rem;
+    padding-bottom: 3rem;
     border-radius: 6px;
   }
 
   .detail-header {
     flex-direction: column;
     align-items: stretch;
-    margin-bottom: 1.5rem;
-    padding-bottom: 2rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .form-section:first-of-type {
+    padding-top: 0.75rem;
   }
 
   .page-title {
@@ -825,18 +987,6 @@
     font-size: 1.75rem;
   }
 
-  .header-actions {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .header-actions button {
-    min-height: 44px;
-    padding: 0.6rem 1rem;
-  }
-
   .form-section {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
@@ -845,19 +995,6 @@
   .section-title {
     font-size: 1.25rem;
     margin-bottom: 1rem;
-  }
-
-  .form-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-  }
-
-  .btn-cancel,
-  .btn-save {
-    width: 100%;
-    min-height: 48px;
-    padding: 0.875rem 1.25rem;
   }
 
   .address-section {
@@ -894,11 +1031,13 @@
 @media (max-width: 480px) {
   .detail-commande-wrapper {
     padding: 0.5rem 0.5rem;
-    padding-top: 60px;
+    padding-top: 44px;
+    padding-bottom: 200px;
   }
 
   .detail-commande-container {
     padding: 1rem;
+    padding-bottom: 3rem;
   }
 
   .commande-title-main {

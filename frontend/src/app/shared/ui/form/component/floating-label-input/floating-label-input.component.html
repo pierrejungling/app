@@ -1,4 +1,4 @@
-<div class="input" [formGroup]="formGroup" [class.disabled]="readonly || control.disabled">
+<div class="input" [formGroup]="formGroup" [class.disabled]="readonly || control.disabled" [class.input--date]="type === 'date'">
   <input 
     class="floating-input" 
     [type]="type"
