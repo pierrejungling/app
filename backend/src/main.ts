@@ -10,6 +10,18 @@ import { ApiInterceptor, ValidationException } from '@common/api';
 
 const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create(AppModule);
+  
+  // Configuration CORS pour autoriser les requêtes depuis le frontend Render
+  app.enableCors({
+    origin: [
+      'https://gravisterie-app-frontend.onrender.com',
+      'http://localhost:4200', // Pour le développement local
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+  
   app.setGlobalPrefix(configManager.getValue(ConfigKey.APP_BASE_URL));
   app.useGlobalFilters(new HttpExceptionFilter());
   swaggerConfiguration.config(app);
