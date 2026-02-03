@@ -808,23 +808,42 @@
 
 // Smartphone : barre d’actions et titres de section en sticky au scroll
 @media (max-width: 768px) {
+  // Désactiver le scroll global en rendant le host fixe, mais en dessous du header
+  :host {
+    display: block;
+    height: calc(100vh - 60px); // Hauteur totale moins le header (44px logo + 16px padding)
+    overflow: hidden;
+    position: fixed;
+    top: 60px; // Commencer après le header fixe (44px logo + 8px padding top + 8px padding bottom)
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+  }
+
   .commandes-en-cours-wrapper {
     // Barre : stick au bord du wrapper. Titres de section : sticky seulement quand ils montent jusqu’au bas de .page-header (barre menu)
     --mobile-fixed-bar-height: 69px;
     --mobile-sticky-top: var(--mobile-fixed-bar-height);
     padding: 0.5rem 0.25rem;
     padding-top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    height: 100%; // Prendre toute la hauteur du host
+    overflow: hidden; // Pas de scroll global, seulement le scroll interne
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
   .commandes-en-cours-container {
     min-width: 0;
     overflow: visible;
     width: 100%;
-    flex: none;
-    min-height: min-content;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
   }
 
   // Barre d’actions : dans le flux au départ, puis sticky tout en haut (au contact du header app)
@@ -865,7 +884,7 @@
     z-index: 50;
     min-height: 56px;
     padding: 1rem 0.75rem;
-    background: #f5f5f5;
+    background: white !important;
     border-bottom: 1px solid #e0e0e0;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -903,7 +922,7 @@
   }
 
   .mobile-sections {
-    padding-bottom: 2rem;
+    padding-bottom: 50vh; // Zone tampon pour permettre de descendre assez bas et bloquer le scroll global
   }
 
   .mobile-card .commande-checkbox {
