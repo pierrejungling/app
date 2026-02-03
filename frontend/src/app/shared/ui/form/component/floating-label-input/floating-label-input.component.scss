@@ -80,7 +80,8 @@
     color: var(--color-text);
   }
 
-  // Champ date : alignement du label avec le contenu (les navigateurs ajoutent du padding interne)
+  // Champ date : alignement du label avec le contenu
+  // Safari iOS gère mal :placeholder-shown sur date → le label est toujours en position "floated" via la classe .fixed-label
   &.input--date {
     .floating-input {
       padding-left: 1rem;
@@ -91,6 +92,9 @@
     .floating-label {
       left: 1rem;
       right: auto;
+    }
+    .floating-label.fixed-label {
+      transform: translateY(-1.75rem) scale(0.85); // Plus de marge pour éviter que le label coupe la bordure sur Safari iOS
     }
   }
 

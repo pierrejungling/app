@@ -27,4 +27,10 @@ export class FloatingLabelInputComponent {
     }
     return 'username';
   }
+
+  /** Safari iOS gère mal :placeholder-shown sur input[type="date"], on utilise toujours le label flottant. */
+  hasValue(): boolean {
+    const v = this.control.value;
+    return v != null && String(v).length > 0;
+  }
 }

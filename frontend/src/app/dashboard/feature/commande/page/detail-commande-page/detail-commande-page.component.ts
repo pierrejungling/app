@@ -505,7 +505,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     if (this.formGroup) {
       const controlsToDisable = [
         'nom_commande', 'deadline', 'description', 'dimensions', 'quantité', 'commentaire_paye',
-        'support', 'police_ecriture', 'texte_personnalisation', 'prix_unitaire_final', 'prix_final',
+        'support', 'couleur', 'police_ecriture', 'texte_personnalisation', 'prix_unitaire_final', 'prix_final',
         'prix_support', 'url_support', 'nom', 'prenom', 'telephone', 'mail',
         'rue', 'code_postal', 'ville', 'pays', 'tva', 'mode_contact'
       ];

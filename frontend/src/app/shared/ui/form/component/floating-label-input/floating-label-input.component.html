@@ -11,6 +11,6 @@
     [disabled]="readonly || control.disabled">
   <label 
     class="floating-label"
-    [class.fixed-label]="inputFocus || (control.value && control.value.length > 0)">{{label}}</label>
+    [class.fixed-label]="inputFocus || hasValue() || type === 'date'">{{label}}</label>
   <span class="input-suffix" *ngIf="suffix">{{suffix}}</span>
 </div>
