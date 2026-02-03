@@ -1,17 +1,19 @@
-import { Component, OnInit, OnDestroy, AfterViewChecked, inject, signal, WritableSignal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewChecked, HostListener, inject, signal, WritableSignal, computed } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormControl, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
-import { HeaderComponent, FloatingLabelInputComponent } from '@shared';
+import { HeaderComponent, FloatingLabelInputComponent, SafeResourceUrlPipe, SafeUrlPipe } from '@shared';
 import { ApiService } from '@api';
-import { ApiURI } from '@api';
-import { Commande, StatutCommande, ModeContact, Couleur } from '../../model/commande.interface';
+import { ApiURI, COMMANDE_FICHIERS_LIST, COMMANDE_FICHIERS_UPLOAD, COMMANDE_FICHIER_DOWNLOAD } from '@api';
+import { forkJoin } from 'rxjs';
+import { Commande, CommandeFichier, StatutCommande, ModeContact, Couleur } from '../../model/commande.interface';
 import { AppRoutes } from '@shared';
+import { renderAsync } from 'docx-preview';
 
 @Component({
   selector: 'app-detail-commande-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HeaderComponent, FloatingLabelInputComponent],
+  imports: [CommonModule, ReactiveFormsModule, HeaderComponent, FloatingLabelInputComponent, SafeResourceUrlPipe, SafeUrlPipe],
   templateUrl: './detail-commande-page.component.html',
   styleUrl: './detail-commande-page.component.scss'
 })
@@ -24,7 +26,31 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   returnPage: string = 'en-cours'; // Page par défaut pour le retour
   private scrollRestored: boolean = false;
   private isInitialLoad: boolean = true; // Flag pour distinguer le chargement initial
-  
+
+  /** Fichiers joints à la commande (métadonnées). */
+  commandeFichiers: WritableSignal<CommandeFichier[]> = signal([]);
+  /** Fichiers triés : images d'abord, puis PDF, puis le reste. */
+  commandeFichiersSorted = computed(() => {
+    const list = this.commandeFichiers();
+    return [...list].sort((a, b) => {
+      const order = (f: CommandeFichier) =>
+        this.isPreviewableImageFichier(f) ? 0 : this.isPdfFichier(f) ? 1 : 2;
+      return order(a) - order(b);
+    });
+  });
+  /** URLs d'aperçu pour les images (id_fichier -> blob URL). */
+  fichierPreviewUrls: WritableSignal<Record<string, string>> = signal({});
+  /** Upload en cours. */
+  fichierUploading: WritableSignal<boolean> = signal(false);
+  /** Drag over la zone d'upload. */
+  isDragOver: WritableSignal<boolean> = signal(false);
+  /** URL de l'image en prévisualisation (null = modal fermée). */
+  previewImageUrl: WritableSignal<string | null> = signal(null);
+  /** URL du PDF en prévisualisation (null = modal fermée). */
+  previewPdfUrl: WritableSignal<string | null> = signal(null);
+  /** Blob du DOCX en prévisualisation (null = modal fermée). */
+  previewDocxBlob: WritableSignal<Blob | null> = signal(null);
+
   // Exposer StatutCommande et ModeContact pour l'utiliser dans le template
   readonly StatutCommande = StatutCommande;
   readonly ModeContact = ModeContact;
@@ -198,6 +224,9 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
 
   ngOnDestroy(): void {
     window.removeEventListener('beforeunload', this.saveScrollPosition);
+    this.revokeFichierPreviewUrls();
+    const pdfUrl = this.previewPdfUrl();
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
   }
 
   private saveScrollPosition = (): void => {
@@ -213,6 +242,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
         if (response.result && response.data) {
           this.commande.set(response.data);
           this.initForm();
+          this.loadFichiers(id);
         }
         this.isLoading.set(false);
         // Ne pas réinitialiser scrollRestored ici pour éviter la restauration lors des rechargements après actions utilisateur
@@ -222,6 +252,215 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
         this.isLoading.set(false);
       }
     });
+  }
+
+  loadFichiers(idCommande: string): void {
+    this.apiService.get(COMMANDE_FICHIERS_LIST(idCommande)).subscribe({
+      next: (response) => {
+        if (response.result && Array.isArray(response.data)) {
+          this.revokeFichierPreviewUrls();
+          this.commandeFichiers.set(response.data);
+          (response.data as CommandeFichier[]).forEach((f) => {
+            if (f.type_mime?.startsWith('image/') || this.isSvgFichier(f)) {
+              this.loadFichierPreview(idCommande, f);
+            }
+          });
+        } else {
+          this.commandeFichiers.set([]);
+        }
+      },
+      error: () => this.commandeFichiers.set([])
+    });
+  }
+
+  private revokeFichierPreviewUrls(): void {
+    const urls = this.fichierPreviewUrls();
+    Object.values(urls).forEach((url) => URL.revokeObjectURL(url));
+    this.fichierPreviewUrls.set({});
+  }
+
+  private loadFichierPreview(idCommande: string, fichier: CommandeFichier): void {
+    this.apiService.getBlob(COMMANDE_FICHIER_DOWNLOAD(idCommande, fichier.id_fichier)).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.fichierPreviewUrls.update((m) => ({ ...m, [fichier.id_fichier]: url }));
+      },
+      error: () => {}
+    });
+  }
+
+  downloadFichier(fichier: CommandeFichier): void {
+    const id = this.commande()?.id_commande;
+    if (!id) return;
+    this.apiService.getBlob(COMMANDE_FICHIER_DOWNLOAD(id, fichier.id_fichier)).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fichier.nom_fichier || 'fichier';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => console.error('Erreur téléchargement:', err)
+    });
+  }
+
+  deleteFichier(idFichier: string): void {
+    const id = this.commande()?.id_commande;
+    if (!id) return;
+    this.apiService.delete(`commande/${id}/fichiers/${idFichier}`).subscribe({
+      next: (response) => {
+        if (response.result) {
+          this.loadFichiers(id);
+        }
+      },
+      error: (err) => console.error('Erreur suppression fichier:', err)
+    });
+  }
+
+  onFichierSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    if (files.length === 0) return;
+    this.uploadFiles(files);
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    const accepted = Array.from(files).filter((file) => {
+      const t = file.type?.toLowerCase();
+      const n = file.name?.toLowerCase() ?? '';
+      return t?.startsWith('image/') || t?.includes('svg') || t === 'application/pdf' ||
+        t === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || t === 'application/msword' ||
+        n.endsWith('.pdf') || n.endsWith('.doc') || n.endsWith('.docx') || n.endsWith('.svg');
+    });
+    if (accepted.length > 0) this.uploadFiles(accepted);
+  }
+
+  private uploadFiles(files: File[]): void {
+    const id = this.commande()?.id_commande;
+    if (!id) return;
+    this.fichierUploading.set(true);
+    const uploads = files.map((file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return this.apiService.postFormData(COMMANDE_FICHIERS_UPLOAD(id), formData);
+    });
+    forkJoin(uploads).subscribe({
+      next: () => {
+        this.fichierUploading.set(false);
+        this.loadFichiers(id);
+      },
+      error: () => {
+        this.fichierUploading.set(false);
+        this.loadFichiers(id);
+      }
+    });
+  }
+
+  isImageFichier(fichier: CommandeFichier): boolean {
+    return !!fichier.type_mime?.startsWith('image/');
+  }
+
+  /** SVG (image/svg+xml ou autres types courants) pour miniature et prévisualisation. */
+  isSvgFichier(fichier: CommandeFichier): boolean {
+    const t = fichier.type_mime?.toLowerCase();
+    return t === 'image/svg+xml' || t === 'image/svg' || (t?.includes('svg') ?? false);
+  }
+
+  /** Fichier prévisualisable comme image (bitmap ou SVG). */
+  isPreviewableImageFichier(fichier: CommandeFichier): boolean {
+    return this.isImageFichier(fichier) || this.isSvgFichier(fichier);
+  }
+
+  isPdfFichier(fichier: CommandeFichier): boolean {
+    return fichier.type_mime === 'application/pdf';
+  }
+
+  /** DOCX (Word récent) : prévisualisation via docx-preview. */
+  isDocxFichier(fichier: CommandeFichier): boolean {
+    const t = fichier.type_mime?.toLowerCase();
+    return t === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || (t?.includes('wordprocessingml') ?? false);
+  }
+
+  /** DOC (Word ancien) : pas de prévisualisation intégrée, téléchargement uniquement. */
+  isDocFichier(fichier: CommandeFichier): boolean {
+    return fichier.type_mime === 'application/msword';
+  }
+
+  openPreview(fichier: CommandeFichier): void {
+    if (!this.isPreviewableImageFichier(fichier)) return;
+    const url = this.fichierPreviewUrls()[fichier.id_fichier];
+    if (url) this.previewImageUrl.set(url);
+  }
+
+  openPreviewPdf(fichier: CommandeFichier): void {
+    const id = this.commande()?.id_commande;
+    if (!id) return;
+    const current = this.previewPdfUrl();
+    if (current) URL.revokeObjectURL(current);
+    this.previewPdfUrl.set(null);
+    this.previewDocxBlob.set(null);
+    this.apiService.getBlob(COMMANDE_FICHIER_DOWNLOAD(id, fichier.id_fichier)).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.previewPdfUrl.set(url);
+      },
+      error: (err) => console.error('Erreur chargement PDF:', err)
+    });
+  }
+
+  openPreviewDocx(fichier: CommandeFichier): void {
+    const id = this.commande()?.id_commande;
+    if (!id || !this.isDocxFichier(fichier)) return;
+    this.previewPdfUrl.set(null);
+    this.previewDocxBlob.set(null);
+    this.apiService.getBlob(COMMANDE_FICHIER_DOWNLOAD(id, fichier.id_fichier)).subscribe({
+      next: (blob) => {
+        this.previewDocxBlob.set(blob);
+        setTimeout(() => this.renderDocxPreview(blob), 50);
+      },
+      error: (err) => console.error('Erreur chargement DOCX:', err)
+    });
+  }
+
+  private renderDocxPreview(blob: Blob): void {
+    const el = document.getElementById('docx-preview-container');
+    if (!el) return;
+    el.innerHTML = '';
+    renderAsync(blob, el).catch((err) => console.error('Erreur rendu DOCX:', err));
+  }
+
+  closePreview(): void {
+    const pdfUrl = this.previewPdfUrl();
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    this.previewImageUrl.set(null);
+    this.previewPdfUrl.set(null);
+    this.previewDocxBlob.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.previewImageUrl() || this.previewPdfUrl() || this.previewDocxBlob()) {
+      this.closePreview();
+    }
   }
 
   initForm(): void {

@@ -1,13 +1,18 @@
-import { Controller, Post, Body, Get, Put, Delete, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Body, Get, Put, Delete, Param, UseInterceptors, UploadedFile, BadRequestException, StreamableFile } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CommandeService } from '../service/commande.service';
+import { CommandeFichierService } from '../service/commande-fichier.service';
 import { AjouterCommandePayload, UpdateStatutPayload } from '../model/payload';
 
 @ApiBearerAuth('access-token')
 @ApiTags('Commande')
 @Controller('commande')
 export class CommandeController {
-    constructor(private readonly commandeService: CommandeService) {}
+    constructor(
+        private readonly commandeService: CommandeService,
+        private readonly commandeFichierService: CommandeFichierService,
+    ) {}
 
     @Post('ajouter')
     @ApiOperation({ summary: 'Ajouter une nouvelle commande' })
@@ -25,6 +30,51 @@ export class CommandeController {
     @ApiOperation({ summary: 'Mettre à jour le statut d\'une commande' })
     async updateStatut(@Body() payload: UpdateStatutPayload) {
         return await this.commandeService.updateStatutCommande(payload.id_commande, payload.statut);
+    }
+
+    @Get(':id/fichiers')
+    @ApiOperation({ summary: 'Liste des fichiers d\'une commande' })
+    async listFichiers(@Param('id') idCommande: string) {
+        return await this.commandeFichierService.listByCommande(idCommande);
+    }
+
+    @Post(':id/fichiers')
+    @ApiOperation({ summary: 'Upload un fichier pour une commande' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } }, required: ['file'] } })
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadFichier(
+        @Param('id') idCommande: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('Aucun fichier fourni');
+        }
+        return await this.commandeFichierService.upload(idCommande, file);
+    }
+
+    @Get(':id/fichiers/:idFichier/download')
+    @ApiOperation({ summary: 'Télécharger un fichier' })
+    async downloadFichier(
+        @Param('id') idCommande: string,
+        @Param('idFichier') idFichier: string,
+    ) {
+        const { stream, contentType, nomFichier } = await this.commandeFichierService.getStream(idCommande, idFichier);
+        const filename = encodeURIComponent(nomFichier);
+        return new StreamableFile(stream, {
+            type: contentType || 'application/octet-stream',
+            disposition: `attachment; filename*=UTF-8''${filename}`,
+        });
+    }
+
+    @Delete(':id/fichiers/:idFichier')
+    @ApiOperation({ summary: 'Supprimer un fichier d\'une commande' })
+    async deleteFichier(
+        @Param('id') idCommande: string,
+        @Param('idFichier') idFichier: string,
+    ) {
+        await this.commandeFichierService.delete(idCommande, idFichier);
+        return { success: true };
     }
 
     @Get(':id')

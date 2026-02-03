@@ -9,5 +9,12 @@ export enum ApiURI {
   UPDATE_STATUT_COMMANDE = 'commande/statut',
   GET_COMMANDE_BY_ID = 'commande',
   UPDATE_COMMANDE = 'commande',
-  DELETE_COMMANDE = 'commande'
+  DELETE_COMMANDE = 'commande',
 }
+
+/** URL pour l’upload d’un fichier sur une commande (remplacer :id par id_commande). */
+export const COMMANDE_FICHIERS_UPLOAD = (idCommande: string) => `commande/${idCommande}/fichiers`;
+/** URL pour la liste des fichiers d'une commande. */
+export const COMMANDE_FICHIERS_LIST = (idCommande: string) => `commande/${idCommande}/fichiers`;
+/** URL pour le téléchargement d'un fichier. */
+export const COMMANDE_FICHIER_DOWNLOAD = (idCommande: string, idFichier: string) => `commande/${idCommande}/fichiers/${idFichier}/download`;

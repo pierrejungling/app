@@ -1,3 +1,12 @@
+/** Métadonnées d'un fichier joint à une commande (stocké en DB, fichier dans R2). */
+export interface CommandeFichier {
+  id_fichier: string;
+  nom_fichier: string;
+  type_mime: string | null;
+  taille_octets: number | null;
+  date_upload: string;
+}
+
 export interface CoordonneesContact {
   nom: string;
   prenom: string;

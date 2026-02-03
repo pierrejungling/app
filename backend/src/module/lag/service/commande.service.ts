@@ -5,6 +5,7 @@ import { Commande, Client, Gravure, Personnalisation, Support, CommandeSupport }
 import { AjouterCommandePayload } from '../model/payload';
 import { StatutCommande } from '../model/entity/enum';
 import { ulid } from 'ulid';
+import { CommandeFichierService } from './commande-fichier.service';
 
 @Injectable()
 export class CommandeService {
@@ -14,7 +15,8 @@ export class CommandeService {
         @InjectRepository(Gravure) private readonly gravureRepository: Repository<Gravure>,
         @InjectRepository(Personnalisation) private readonly personnalisationRepository: Repository<Personnalisation>,
         @InjectRepository(Support) private readonly supportRepository: Repository<Support>,
-        @InjectRepository(CommandeSupport) private readonly commandeSupportRepository: Repository<CommandeSupport>
+        @InjectRepository(CommandeSupport) private readonly commandeSupportRepository: Repository<CommandeSupport>,
+        private readonly commandeFichierService: CommandeFichierService,
     ) {}
 
     async ajouterCommande(payload: AjouterCommandePayload): Promise<Commande> {
@@ -689,6 +691,9 @@ export class CommandeService {
             // Supprimer la gravure
             await this.gravureRepository.remove(gravure);
         }
+
+        // Supprimer les fichiers de la commande (R2 + table commande_fichier)
+        await this.commandeFichierService.deleteAllByCommande(idCommande);
 
         // Supprimer la commande
         await this.commandeRepository.remove(commande);

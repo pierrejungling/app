@@ -127,6 +127,37 @@
           <p class="default-value-hint">Par défaut: {{ supportParDefaut }}</p>
         </div>
 
+        <!-- Fichiers joints -->
+        <div class="input-wrapper fichiers-joints-wrapper">
+          <label class="label">Fichiers joints</label>
+          <p class="fichiers-hint">Images (JPG, PNG, etc.), PDF, DOC/DOCX. Ils seront envoyés sur le stockage après la création de la commande.</p>
+          <div
+            class="fichiers-drop-zone"
+            [class.drag-over]="isDragOver"
+            (click)="fileInputRef.click()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)">
+            <input
+              #fileInputRef
+              type="file"
+              class="fichiers-input-hidden"
+              multiple
+              accept="image/*,.pdf,.doc,.docx"
+              (change)="onFileSelected($event)"
+              (click)="$event.stopPropagation()">
+            <span class="fichiers-drop-text">Glissez des images ou des fichiers ici, ou cliquez pour parcourir</span>
+          </div>
+          <ul class="fichiers-list" *ngIf="uploadedFiles.length > 0">
+            <li *ngFor="let file of uploadedFiles; let i = index" class="fichiers-list-item">
+              <img *ngIf="file.type.startsWith('image/')" [src]="getFilePreviewUrl(file)" alt="" class="fichiers-list-thumb">
+              <span class="fichiers-list-icon" *ngIf="!file.type.startsWith('image/')">📄</span>
+              <span class="fichiers-list-name" [title]="file.name">{{ file.name }}</span>
+              <button type="button" class="fichiers-list-remove" (click)="removeFile(i); $event.stopPropagation()" title="Retirer">✕</button>
+            </li>
+          </ul>
+        </div>
+
       </section>
 
       <!-- Coordonnées de contact -->

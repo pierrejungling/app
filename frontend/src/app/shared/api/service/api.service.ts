@@ -18,8 +18,18 @@ export class ApiService {
     return this.handle(this.http.get(`${this.baseURL}${partURL}`));
   }
 
+  /** GET qui retourne un Blob (ex. téléchargement de fichier). Ne passe pas par le wrapper JSON. */
+  getBlob(partURL: string): Observable<Blob> {
+    return this.http.get(`${this.baseURL}${partURL}`, { responseType: 'blob' });
+  }
+
   post(partURL: string, payload: Payload): Observable<ApiResponse> {
     return this.handle(this.http.post(`${this.baseURL}${partURL}`, payload));
+  }
+
+  /** POST avec FormData (ex. upload de fichier). */
+  postFormData(partURL: string, formData: FormData): Observable<ApiResponse> {
+    return this.handle(this.http.post(`${this.baseURL}${partURL}`, formData));
   }
 
   put(partURL: string, payload: Payload): Observable<ApiResponse> {

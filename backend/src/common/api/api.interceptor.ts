@@ -4,6 +4,7 @@ import { configManager } from "@common/config";
 import { ConfigKey } from "@common/config/enum";
 import { Logger } from "@nestjs/common";
 import { NestInterceptor, ExecutionContext, CallHandler, Injectable } from "@nestjs/common";
+import { StreamableFile } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { instanceToPlain } from "class-transformer";
@@ -20,7 +21,11 @@ export class ApiInterceptor implements NestInterceptor {
             .handle()
             .pipe(
                 map((response: any) => {
-                   return {code: this.map(path), data: instanceToPlain(response), result: true}
+                    // Ne pas envelopper les réponses binaires (ex. téléchargement de fichier)
+                    if (response instanceof StreamableFile) {
+                        return response;
+                    }
+                    return { code: this.map(path), data: instanceToPlain(response), result: true };
                 })
             );
     }

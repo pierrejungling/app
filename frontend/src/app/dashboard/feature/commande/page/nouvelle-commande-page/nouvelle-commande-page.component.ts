@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HeaderComponent, FloatingLabelInputComponent, getFormValidationErrors, FormError } from '@shared';
 import { ApiService } from '@api';
-import { ApiURI } from '@api';
+import { ApiURI, COMMANDE_FICHIERS_UPLOAD } from '@api';
+import { forkJoin } from 'rxjs';
 import { NouvelleCommandeForm, CoordonneesContactForm } from '../../data/form/nouvelle-commande.form';
 import { Couleur, StatutCommande, ModeContact } from '../../model/commande.interface';
 import { AppRoutes } from '@shared';
@@ -157,6 +158,8 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
 
   ngOnDestroy(): void {
     window.removeEventListener('beforeunload', this.saveScrollPosition);
+    this.filePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    this.filePreviewUrls.clear();
   }
 
   private saveScrollPosition = (): void => {
@@ -467,7 +470,26 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
     }
   }
 
+  /** URLs créées pour l’aperçu des images (à révoquer au démontage ou à la suppression). */
+  private filePreviewUrls = new Map<File, string>();
+
+  getFilePreviewUrl(file: File): string {
+    if (!file.type.startsWith('image/')) return '';
+    let url = this.filePreviewUrls.get(file);
+    if (!url) {
+      url = URL.createObjectURL(file);
+      this.filePreviewUrls.set(file, url);
+    }
+    return url;
+  }
+
   removeFile(index: number): void {
+    const file = this.uploadedFiles[index];
+    const url = file && this.filePreviewUrls.get(file);
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.filePreviewUrls.delete(file);
+    }
     this.uploadedFiles.splice(index, 1);
     this.formGroup.get('fichiers_joints')?.setValue(this.uploadedFiles);
   }
@@ -606,21 +628,63 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
 
       console.log('Payload envoyé:', JSON.stringify(payload, null, 2));
 
-      // Appel à l'API
+      // 1. Créer la commande
       this.apiService.post(ApiURI.AJOUTER_COMMANDE, payload).subscribe({
         next: (response) => {
-          if (response.result) {
-            try {
-              sessionStorage.removeItem(this.scrollKey);
-            } catch {}
-            this.showSuccessPopup.set(true);
-          } else {
+          if (!response.result) {
             this.errors.set([{
               control: 'commande',
               value: '',
               error: 'Erreur lors de la création de la commande. Veuillez réessayer.'
             }]);
+            return;
           }
+          const idCommande = response.data?.id_commande as string | undefined;
+          const filesToUpload = [...this.uploadedFiles];
+
+          if (!idCommande || filesToUpload.length === 0) {
+            try {
+              sessionStorage.removeItem(this.scrollKey);
+            } catch {}
+            this.showSuccessPopup.set(true);
+            return;
+          }
+
+          // 2. Envoyer chaque fichier vers R2 (POST commande/:id/fichiers)
+          const uploads = filesToUpload.map((file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return this.apiService.postFormData(COMMANDE_FICHIERS_UPLOAD(idCommande), formData);
+          });
+
+          forkJoin(uploads).subscribe({
+            next: (responses) => {
+              const allOk = Array.isArray(responses) && responses.every((r: any) => r?.result === true);
+              try {
+                sessionStorage.removeItem(this.scrollKey);
+              } catch {}
+              this.showSuccessPopup.set(true);
+              if (!allOk) {
+                this.errors.set([{
+                  control: 'commande',
+                  value: '',
+                  error: 'Commande créée mais certains fichiers n\'ont pas pu être envoyés.'
+                }]);
+              }
+            },
+            error: (err) => {
+              console.error('Erreur lors de l\'envoi des fichiers:', err);
+              try {
+                sessionStorage.removeItem(this.scrollKey);
+              } catch {}
+              this.showSuccessPopup.set(true);
+              this.errors.set([{
+                control: 'commande',
+                value: '',
+                error: 'Commande créée mais certains fichiers n\'ont pas pu être envoyés.'
+              }]);
+            }
+          });
         },
         error: (error) => {
           console.error('Erreur lors de la création de la commande:', error);
@@ -650,6 +714,8 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
     (this.formGroup.get('pays') as any)?.setValue('Belgique');
     this.formGroup.get('statut_initial')?.setValue(StatutCommande.EN_ATTENTE_INFORMATION);
     
+    this.filePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    this.filePreviewUrls.clear();
     this.uploadedFiles = [];
     this.errors.set([]);
     // Scroll vers le haut de la page

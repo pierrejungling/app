@@ -122,7 +122,92 @@
             [readonly]="!isEditMode()">
           </app-floating-label-input>
         </div>
+
+        <!-- Fichiers joints -->
+        <section class="form-section fichiers-section">
+          <h2 class="section-title">Fichiers joints</h2>
+          <p class="fichiers-hint" *ngIf="commandeFichiersSorted().length === 0">Aucun fichier pour cette commande.</p>
+          <ul class="fichiers-list" *ngIf="commandeFichiersSorted().length > 0">
+            <li *ngFor="let fichier of commandeFichiersSorted()" class="fichiers-list-item">
+              <button
+                *ngIf="isPreviewableImageFichier(fichier) && fichierPreviewUrls()[fichier.id_fichier]"
+                type="button"
+                class="fichiers-list-thumb-btn"
+                (click)="openPreview(fichier)"
+                title="Voir en grand">
+                <img
+                  [src]="fichierPreviewUrls()[fichier.id_fichier]"
+                  [alt]="fichier.nom_fichier"
+                  class="fichiers-list-thumb">
+              </button>
+              <button
+                *ngIf="isPdfFichier(fichier)"
+                type="button"
+                class="fichiers-list-thumb-btn fichiers-list-pdf-btn"
+                (click)="openPreviewPdf(fichier)"
+                title="Prévisualiser le PDF">
+                <span class="fichiers-list-pdf-icon">📄</span>
+              </button>
+              <button
+                *ngIf="isDocxFichier(fichier)"
+                type="button"
+                class="fichiers-list-thumb-btn fichiers-list-docx-btn"
+                (click)="openPreviewDocx(fichier)"
+                title="Prévisualiser le document Word">
+                <span class="fichiers-list-docx-icon">📝</span>
+              </button>
+              <span class="fichiers-list-icon" *ngIf="!isPreviewableImageFichier(fichier) && !isPdfFichier(fichier) && !isDocxFichier(fichier)">📄</span>
+              <span class="fichiers-list-placeholder" *ngIf="isPreviewableImageFichier(fichier) && !fichierPreviewUrls()[fichier.id_fichier]">🖼</span>
+              <span class="fichiers-list-name" [title]="fichier.nom_fichier">{{ fichier.nom_fichier }}</span>
+              <span class="fichiers-list-size" *ngIf="fichier.taille_octets">{{ (fichier.taille_octets / 1024) | number:'1.0-0' }} Ko</span>
+              <div class="fichiers-list-actions">
+                <button type="button" class="btn-fichier btn-download btn-icon" (click)="downloadFichier(fichier)" title="Télécharger">⬇</button>
+                <button type="button" class="btn-fichier btn-delete btn-icon" (click)="deleteFichier(fichier.id_fichier)" title="Supprimer">🗑</button>
+              </div>
+            </li>
+          </ul>
+          <div class="input-wrapper fichiers-add-wrapper">
+            <label class="label">Ajouter un fichier</label>
+            <p class="fichiers-add-hint">Images, SVG, PDF, DOC/DOCX. Plusieurs fichiers possibles.</p>
+            <div
+              class="fichiers-drop-zone"
+              [class.drag-over]="isDragOver()"
+              [class.uploading]="fichierUploading()"
+              (click)="fileInputRef.click()"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave($event)"
+              (drop)="onDrop($event)">
+              <input
+                #fileInputRef
+                type="file"
+                class="fichiers-input-hidden"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.svg"
+                [disabled]="fichierUploading()"
+                (change)="onFichierSelected($event)"
+                (click)="$event.stopPropagation()">
+              <span class="fichiers-drop-text" *ngIf="!fichierUploading()">Glissez des images ou des fichiers ici, ou cliquez pour parcourir</span>
+              <span class="fichiers-drop-text fichiers-add-loading" *ngIf="fichierUploading()">Envoi en cours…</span>
+            </div>
+          </div>
+        </section>
       </section>
+
+      <!-- Modal prévisualisation image, PDF ou DOCX -->
+      <div
+        class="preview-overlay"
+        *ngIf="previewImageUrl() || previewPdfUrl() || previewDocxBlob()"
+        (click)="closePreview()"
+        role="button"
+        tabindex="0"
+        aria-label="Fermer l'aperçu">
+        <button type="button" class="preview-close" (click)="closePreview(); $event.stopPropagation()" title="Fermer">✕</button>
+        <div class="preview-content" [class.preview-content--pdf]="previewPdfUrl()" [class.preview-content--docx]="previewDocxBlob()" (click)="$event.stopPropagation()">
+          <img *ngIf="previewImageUrl()" [src]="previewImageUrl() | safeUrl" alt="Aperçu" class="preview-image">
+          <iframe *ngIf="previewPdfUrl()" [src]="previewPdfUrl() | safeResourceUrl" class="preview-pdf" title="Aperçu PDF"></iframe>
+          <div *ngIf="previewDocxBlob()" id="docx-preview-container" class="preview-docx"></div>
+        </div>
+      </div>
 
       <!-- Prix et Frais -->
       <section class="form-section">
