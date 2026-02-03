@@ -932,6 +932,22 @@
     min-height: 22px;
   }
 
+  // Limiter la zone de clic des checkboxes à la largeur du contenu (checkbox + texte)
+  .mobile-card__actions .checkbox-label {
+    width: fit-content;
+    display: inline-flex;
+    align-self: flex-start;
+  }
+
+  // Même chose pour le toggle "Rien à faire" - limiter la zone de clic
+  .mobile-card .attente-reponse-toggle-bottom-left {
+    width: fit-content;
+  }
+
+  .mobile-card .toggle-switch-small {
+    width: fit-content;
+  }
+
   .mobile-card .toggle-switch-small .toggle-slider {
     width: 36px;
     height: 20px;
