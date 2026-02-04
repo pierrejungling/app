@@ -479,6 +479,10 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       police_ecriture: new FormControl({ value: cmd.personnalisation?.police || '', disabled: !isEdit }),
       texte_personnalisation: new FormControl({ value: cmd.personnalisation?.texte || '', disabled: !isEdit }),
       quantité: new FormControl({ value: cmd.quantité || 1, disabled: !isEdit }),
+      quantite_realisee: new FormControl({
+        value: cmd.quantite_realisee ?? 0,
+        disabled: this.isStatutFinitionCompleted()
+      }),
       prix_final: new FormControl({ value: cmd.prix_final || '', disabled: !isEdit }),
       prix_unitaire_final: new FormControl({ value: cmd.prix_unitaire_final || (cmd.prix_final && cmd.quantité ? cmd.prix_final / cmd.quantité : ''), disabled: !isEdit }),
       payé: new FormControl(cmd.payé || false), // Toujours modifiable
@@ -797,6 +801,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       deadline: formValue.deadline || null,
       description: formValue.description,
       quantité: formValue.quantité ? parseInt(formValue.quantité, 10) : null,
+      quantite_realisee: formValue.quantite_realisee !== null && formValue.quantite_realisee !== undefined && formValue.quantite_realisee !== '' ? parseInt(String(formValue.quantite_realisee), 10) : 0,
       payé: formValue.payé || false,
       commentaire_paye: formValue.commentaire_paye || null,
       attente_reponse: formValue.attente_reponse ?? false,
@@ -881,6 +886,46 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     });
   }
 
+  incrementQuantiteRealisee(): void {
+    const max = parseInt(this.formGroup.get('quantité')?.value || '1', 10) || 1;
+    const current = parseInt(this.formGroup.get('quantite_realisee')?.value || '0', 10) || 0;
+    const next = Math.min(current + 1, max);
+    this.formGroup.get('quantite_realisee')?.setValue(next, { emitEvent: false });
+    this.onQuantiteRealiseeChange();
+  }
+
+  decrementQuantiteRealisee(): void {
+    const current = parseInt(this.formGroup.get('quantite_realisee')?.value || '0', 10) || 0;
+    const next = Math.max(current - 1, 0);
+    this.formGroup.get('quantite_realisee')?.setValue(next, { emitEvent: false });
+    this.onQuantiteRealiseeChange();
+  }
+
+  onQuantiteRealiseeChange(): void {
+    if (!this.commande()) return;
+
+    const id = this.commande()!.id_commande;
+    const raw = this.formGroup.get('quantite_realisee')?.value;
+    const quantiteTotale = parseInt(this.formGroup.get('quantité')?.value || '1', 10) || 1;
+    let val = raw !== null && raw !== undefined && raw !== '' ? parseInt(String(raw), 10) : 0;
+    if (isNaN(val) || val < 0) val = 0;
+    if (val > quantiteTotale) val = quantiteTotale;
+
+    const payload: any = {
+      quantite_realisee: val,
+    };
+
+    this.apiService.put(`${ApiURI.UPDATE_COMMANDE}/${id}`, payload).subscribe({
+      next: () => {
+        this.loadCommande(id);
+      },
+      error: (error) => {
+        console.error('Erreur lors de la mise à jour des PCs réalisés:', error);
+        this.formGroup.get('quantite_realisee')?.setValue(this.commande()?.quantite_realisee ?? 0, { emitEvent: false });
+      }
+    });
+  }
+
   onAttenteReponseChange(): void {
     if (!this.commande()) return;
 
@@ -903,6 +948,14 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
         this.formGroup.get('attente_reponse')?.setValue(!attenteReponseValue, { emitEvent: false });
       }
     });
+  }
+
+  isStatutFinitionCompleted(): boolean {
+    return this.isStatutChecked(StatutCommande.A_FINIR_LAVER_ASSEMBLER_PEINDRE);
+  }
+
+  isQuantiteRealiseeEditable(): boolean {
+    return !this.isStatutFinitionCompleted();
   }
 
   isStatutChecked(statut: StatutCommande): boolean {
@@ -1205,6 +1258,16 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       }).subscribe({
         next: () => {
           this.loadCommande(cmd.id_commande);
+          // Si on a fini la finition : compléter automatiquement le compteur quantité réalisée au max
+          if (statut === StatutCommande.A_FINIR_LAVER_ASSEMBLER_PEINDRE) {
+            const qteTotale = cmd.quantité ?? 1;
+            this.apiService.put(`${ApiURI.UPDATE_COMMANDE}/${cmd.id_commande}`, {
+              quantite_realisee: qteTotale
+            }).subscribe({
+              next: () => this.loadCommande(cmd.id_commande),
+              error: (err) => console.error('Erreur mise à jour quantité réalisée:', err)
+            });
+          }
         },
         error: (error) => {
           console.error('Erreur lors de la mise à jour du statut:', error);

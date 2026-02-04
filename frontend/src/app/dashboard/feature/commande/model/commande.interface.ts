@@ -86,6 +86,7 @@ export interface Commande {
   statuts_actifs?: StatutCommande[];
   prix_final?: number;
   quantité?: number;
+  quantite_realisee?: number;
   payé?: boolean;
   commentaire_paye?: string;
   attente_reponse?: boolean; // false = client attend réponse, true = moi qui attends réponse

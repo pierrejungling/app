@@ -75,8 +75,6 @@
       <section class="form-section">
         <h2 class="section-title">Informations de la commande</h2>
         
-        <!-- Le champ nom_commande est maintenant dans le header, on ne l'affiche plus ici -->
-
         <div 
           class="input-wrapper"
           [class.deadline-highlight-warning]="getDeadlineStatus() === 'warning'"
@@ -582,6 +580,31 @@
           [formGroup]="formGroup"
           [readonly]="!isEditMode()">
         </app-floating-label-input>
+      </div>
+    </section>
+
+    <!-- PCs réalisés -->
+    <section class="form-section pcs-realises-section">
+      <h2 class="section-title">Quantité produite</h2>
+      <div class="pcs-realises-wrapper" [class.pcs-realises-disabled]="!isQuantiteRealiseeEditable()">
+        <div class="pcs-realises-block">
+          <div class="pcs-realises-input-row">
+            <input
+              type="number"
+              class="pcs-realises-input"
+              [formControl]="get('quantite_realisee')"
+              (change)="onQuantiteRealiseeChange()"
+              [min]="0"
+              [max]="get('quantité').value || 1"
+              placeholder="0">
+            <span class="pcs-realises-separator">/</span>
+            <span class="pcs-realises-total">{{ get('quantité').value || 1 }}</span>
+            <div class="pcs-realises-buttons" *ngIf="isQuantiteRealiseeEditable()">
+              <button type="button" class="pcs-btn pcs-btn-minus" (click)="decrementQuantiteRealisee()" title="Diminuer">−</button>
+              <button type="button" class="pcs-btn pcs-btn-plus" (click)="incrementQuantiteRealisee()" title="Augmenter">+</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

@@ -46,6 +46,9 @@ export class Commande {
     @Column({type: 'integer', nullable: true})
     quantité: number | null;
 
+    @Column({type: 'integer', nullable: true, default: 0})
+    quantite_realisee: number | null;
+
     @OneToMany(() => CommandeSupport, (commandeSupport) => commandeSupport.commande, { cascade: true })
     supports: CommandeSupport[];
 

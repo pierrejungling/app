@@ -289,6 +289,7 @@ export class CommandeService {
             prix_final: commande.prix_final,
             prix_unitaire_final: commande.prix_unitaire_final,
             quantité: commande.quantité,
+            quantite_realisee: commande.quantite_realisee ?? 0,
             payé: commande.payé,
             commentaire_paye: commande.commentaire_paye,
             attente_reponse: commande.attente_reponse,
@@ -327,6 +328,7 @@ export class CommandeService {
         if (payload.deadline !== undefined) commande.deadline = payload.deadline ? new Date(payload.deadline) : null;
         if (payload.description !== undefined) commande.description = payload.description;
         if (payload.quantité !== undefined) commande.quantité = payload.quantité;
+        if (payload.quantite_realisee !== undefined) commande.quantite_realisee = payload.quantite_realisee !== null ? parseInt(String(payload.quantite_realisee), 10) : 0;
         if (payload.payé !== undefined) commande.payé = payload.payé;
         if (payload.commentaire_paye !== undefined) commande.commentaire_paye = payload.commentaire_paye?.trim() || null;
         if (payload.attente_reponse !== undefined) commande.attente_reponse = payload.attente_reponse;
@@ -482,6 +484,7 @@ export class CommandeService {
             prix_final: commandeReloaded.prix_final,
             prix_unitaire_final: commandeReloaded.prix_unitaire_final,
             quantité: commandeReloaded.quantité,
+            quantite_realisee: commandeReloaded.quantite_realisee ?? 0,
             payé: commandeReloaded.payé,
             commentaire_paye: commandeReloaded.commentaire_paye,
             attente_reponse: commandeReloaded.attente_reponse,
