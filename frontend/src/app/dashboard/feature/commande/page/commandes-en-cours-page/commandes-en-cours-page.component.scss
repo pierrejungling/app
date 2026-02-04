@@ -775,7 +775,7 @@
   }
 }
 
-@media (max-width: 1919px) and (min-width: 1440px) {
+@media (max-width: 1919px) and (min-width: 1650px) {
   // Écrans moyens-grands : largeur égale
   .commandes-table th,
   .commandes-table td {
@@ -784,59 +784,21 @@
   }
 }
 
-@media (max-width: 1439px) and (min-width: 1024px) {
-  // Écrans moyens : colonnes égales
-  .commandes-table th,
-  .commandes-table td {
-    width: calc(100% / 9);
-    padding: 0.75rem 0.5rem;
-  }
-
-  .statut-emoji {
-    font-size: 1.5rem;
-  }
-
-  .statut-label {
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 1023px) {
-  // Petits écrans : colonnes égales mais plus petites
-  .commandes-en-cours-wrapper {
-    padding: 0.5rem 1rem;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
+// Entre 1650px et 768px : colonnes avec largeur fixe et scroll horizontal
+@media (max-width: 1649px) and (min-width: 769px) {
+  .commandes-table {
+    min-width: 1620px; // 9 colonnes × 180px = 1620px (force le scroll horizontal)
+    width: auto;
   }
 
   .commandes-table th,
   .commandes-table td {
-    width: calc(100% / 9);
-    padding: 0.5rem 0.375rem;
-  }
-
-  .statut-emoji {
-    font-size: 1.25rem;
-  }
-
-  .statut-label {
-    font-size: 0.7rem;
-  }
-
-  .commande-card {
-    padding: 0.75rem;
-  }
-
-  .commande-title {
-    font-size: 0.9rem;
-  }
-
-  .commande-info {
-    font-size: 0.8rem;
+    width: 180px; // Largeur fixe pour chaque colonne
+    min-width: 180px;
+    padding: 0.75rem 0.5rem !important; // Garder les paddings normaux pour les hauteurs verticales
   }
 }
+
 
 // Smartphone : barre d’actions et titres de section en sticky au scroll
 @media (max-width: 768px) {
