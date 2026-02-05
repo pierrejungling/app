@@ -439,6 +439,16 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
           if (updatedCommande.statuts_actifs.length === 0) {
             updatedCommande.statuts_actifs = undefined;
           }
+          
+          // Si tous les 4 statuts finaux sont complétés, passer à TERMINE
+          const tousCompletes = statutsFinaux.every(s => 
+            !updatedCommande.statuts_actifs || !updatedCommande.statuts_actifs.includes(s)
+          );
+          
+          if (tousCompletes) {
+            updatedCommande.statut_commande = StatutCommande.TERMINE;
+            updatedCommande.statuts_actifs = undefined;
+          }
         }
       } else {
         // Pour les autres statuts : passer au statut suivant dans l'ordre
@@ -467,8 +477,16 @@ export class CommandesEnCoursPageComponent implements OnInit, OnDestroy, AfterVi
       id_commande: commande.id_commande,
       statut: statut
     }).subscribe({
-      next: () => {
-        // Mise à jour réussie, les données locales sont déjà à jour
+      next: (response) => {
+        // Utiliser la réponse de l'API pour synchroniser l'état (le backend peut avoir fait des changements supplémentaires)
+        if (response.result && response.data) {
+          const commandes = [...this.commandes()];
+          const index = commandes.findIndex(c => c.id_commande === commande.id_commande);
+          if (index !== -1) {
+            commandes[index] = { ...commandes[index], ...response.data };
+            this.commandes.set(commandes);
+          }
+        }
       },
       error: (error) => {
         console.error('Erreur lors de la mise à jour du statut:', error);

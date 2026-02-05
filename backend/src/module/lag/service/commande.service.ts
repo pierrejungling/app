@@ -559,14 +559,16 @@ export class CommandeService {
             if (statutsActifs.includes(nouveauStatut)) {
                 // Retirer ce statut de la liste (la commande est complétée pour ce statut)
                 statutsActifs = statutsActifs.filter(s => s !== nouveauStatut);
-                commande.statuts_actifs = statutsActifs.length > 0 ? statutsActifs : null;
-
-                // Si tous les 4 statuts finaux sont complétés, passer à TERMINE
-                const tousCompletes = statutsFinaux.every(statut => !statutsActifs.includes(statut));
+                
+                // Si tous les 4 statuts finaux sont complétés (statutsActifs est vide), passer à TERMINE
+                const tousCompletes = statutsActifs.length === 0 || 
+                    statutsFinaux.every(statut => !statutsActifs.includes(statut));
                 
                 if (tousCompletes) {
                     commande.statut_commande = StatutCommande.TERMINE;
                     commande.statuts_actifs = null;
+                } else {
+                    commande.statuts_actifs = statutsActifs.length > 0 ? statutsActifs : null;
                 }
             } else {
                 // Le statut n'est pas dans statuts_actifs, donc on le décoche (retour en arrière)
