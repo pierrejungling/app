@@ -137,7 +137,42 @@ export class HeaderComponent {
   }
 
   goBack(): void {
-    // Utiliser l'historique du navigateur pour revenir à la page précédente
+    const route = this.normalizeRoute(this.currentRoute());
+
+    // Nouvelle commande -> dashboard
+    if (route.startsWith(AppRoutes.NOUVELLE_COMMANDE)) {
+      this.router.navigate([AppRoutes.AUTHENTICATED]);
+      return;
+    }
+
+    // Commandes en cours -> dashboard
+    if (route.startsWith(AppRoutes.COMMANDES_EN_COURS)) {
+      this.router.navigate([AppRoutes.AUTHENTICATED]);
+      return;
+    }
+
+    // Commandes terminées/annulées -> dashboard
+    if (route.startsWith(`/${AppNode.AUTHENTICATED}/${AppNode.COMMANDES}/${AppNode.COMMANDES_TERMINEES}`)) {
+      this.router.navigate([AppRoutes.AUTHENTICATED]);
+      return;
+    }
+
+    // Détail commande -> retour selon provenance
+    if (route.startsWith(`/${AppNode.AUTHENTICATED}/${AppNode.COMMANDES}/detail/`)) {
+      try {
+        const returnPage = sessionStorage.getItem('detail-return-page');
+        if (returnPage === 'terminees') {
+          this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'terminees']);
+          return;
+        }
+      } catch {
+        // ignorer
+      }
+      this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'en-cours']);
+      return;
+    }
+
+    // Par défaut, utiliser l'historique du navigateur
     window.history.back();
   }
 
@@ -186,7 +221,22 @@ export class HeaderComponent {
     this.searchOpen.set(nextState);
     if (nextState) {
       this.onSearchFocus();
-      setTimeout(() => this.searchInput?.nativeElement?.focus(), 0);
+      this.focusSearchInput();
+    }
+  }
+
+  private focusSearchInput(attempt: number = 0): void {
+    const input = this.searchInput?.nativeElement;
+    if (input) {
+      try {
+        input.focus({ preventScroll: true });
+      } catch {
+        input.focus();
+      }
+      return;
+    }
+    if (attempt < 5) {
+      setTimeout(() => this.focusSearchInput(attempt + 1), 50);
     }
   }
 

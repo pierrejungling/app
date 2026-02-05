@@ -287,6 +287,15 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       next: (response) => {
         if (response.result && response.data) {
           this.commande.set(response.data);
+          try {
+            const statut = (response.data as Commande).statut_commande;
+            const returnPage = statut === StatutCommande.TERMINE || statut === StatutCommande.ANNULEE
+              ? 'terminees'
+              : 'en-cours';
+            sessionStorage.setItem(this.detailReturnPageKey, returnPage);
+          } catch {
+            // ignorer
+          }
           this.initForm();
           this.loadFichiers(id);
         }
