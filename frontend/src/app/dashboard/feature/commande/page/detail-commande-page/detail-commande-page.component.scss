@@ -61,6 +61,13 @@
   line-height: 1.2;
 }
 
+.commande-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .commande-title-edit {
   margin-top: 0.5rem;
   
@@ -548,6 +555,45 @@
   display: flex;
   gap: 0.75rem;
   align-items: center;
+}
+
+.detail-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+  color: #ffffff;
+
+  &--terminee {
+    color: #ffffff;
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+
+  &--annulee {
+    color: #ffffff;
+    background: #ef4444;
+    border-color: #ef4444;
+  }
+}
+
+// Mode clair : badges pastel
+:host-context([data-theme="light"]) .detail-status-badge {
+  &--terminee {
+    color: #14532d;
+    background: #dcfce7;
+    border-color: #bbf7d0;
+  }
+
+  &--annulee {
+    color: #7f1d1d;
+    background: #fee2e2;
+    border-color: #fecaca;
+  }
 }
 
 .attente-reponse-toggle-bar {
@@ -1195,6 +1241,16 @@
       opacity: 0.7;
     }
   }
+}
+
+.commande-date-display {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+}
+
+.commande-date-display strong {
+  color: var(--color-text);
 }
 
 .address-section {
@@ -1848,10 +1904,63 @@
   background: var(--color-secondary);
 }
 
+.statuts-section__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.statuts-section__title-row .section-title {
+  margin: 0;
+}
+
+.detail-duplicate-section {
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-duplicate {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--btn-toggle-prix-border);
+  border-radius: 6px;
+  background: var(--btn-toggle-prix-bg);
+  color: var(--btn-toggle-prix-color);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #bbdefb;
+    border-color: #64b5f6;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  :root[data-theme="dark"] &,
+  [data-theme="dark"] & {
+    color: #ffffff !important;
+  }
+
+  :root[data-theme="dark"] &:hover:not(:disabled),
+  [data-theme="dark"] &:hover:not(:disabled) {
+    background: #0d47a1 !important;
+    border-color: #0277bd !important;
+    color: #ffffff !important;
+  }
+}
+
 .statuts-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .statut-checkbox-label {
@@ -1960,6 +2069,26 @@
   justify-content: center;
   z-index: 2000;
   animation: fadeInOverlay 0.3s ease;
+}
+
+// Variante duplication : accents bleus
+.delete-confirm-overlay.duplicate-confirm {
+  .delete-confirm-header h3 {
+    color: #1d4ed8;
+  }
+
+  .delete-confirm-body .delete-warning {
+    color: #1d4ed8;
+  }
+
+  .btn-confirm-delete {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  .btn-confirm-delete:hover {
+    background: #1d4ed8;
+  }
 }
 
 .delete-confirm-popup {

@@ -29,7 +29,11 @@
             class="commande-card"
             [title]="commande.produit || 'Commande #' + commande.id_commande"
             (click)="onCommandeClick(commande)">
-            <span class="payment-indicator" *ngIf="commande['payé']">✓ payé</span>
+            <span
+              class="payment-indicator payment-indicator--unpaid"
+              *ngIf="!commande['payé'] && commande.prix_final && commande.prix_final > 0">
+              Non payé
+            </span>
             <div class="commande-header">
               <h3 class="commande-title">
                 {{ commande.produit || 'Commande #' + commande.id_commande.substring(0, 8) }}
@@ -71,7 +75,11 @@
             class="commande-card commande-annulee"
             [title]="commande.produit || 'Commande #' + commande.id_commande"
             (click)="onCommandeClick(commande)">
-            <span class="payment-indicator" *ngIf="commande['payé']">✓ payé</span>
+            <span
+              class="payment-indicator payment-indicator--unpaid"
+              *ngIf="!commande['payé'] && commande.prix_final && commande.prix_final > 0">
+              Non payé
+            </span>
             <div class="commande-header">
               <h3 class="commande-title">
                 {{ commande.produit || 'Commande #' + commande.id_commande.substring(0, 8) }}

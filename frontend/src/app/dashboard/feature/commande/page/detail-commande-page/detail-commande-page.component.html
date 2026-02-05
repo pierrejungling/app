@@ -48,15 +48,19 @@
 <div class="detail-commande-wrapper">
   <div 
     class="detail-commande-container" 
-    [class.deadline-warning]="getDeadlineStatus() === 'warning'"
-    [class.deadline-danger]="getDeadlineStatus() === 'danger'"
+    [class.deadline-warning]="getDeadlineStatus() === 'warning' && !isCommandeTerminee() && !isCommandeAnnulee()"
+    [class.deadline-danger]="getDeadlineStatus() === 'danger' && !isCommandeTerminee() && !isCommandeAnnulee()"
     *ngIf="!isLoading() && commande()">
     <div class="detail-header">
       <div class="header-title-section">
         <h1 class="page-title">Détail de la commande</h1>
-        <h2 class="commande-title-main" *ngIf="!isEditMode()">
-          {{ commande()?.produit || 'Commande #' + (commande()?.id_commande?.substring(0, 8) || '') }}
-        </h2>
+        <div class="commande-title-row" *ngIf="!isEditMode()">
+          <h2 class="commande-title-main">
+            {{ commande()?.produit || 'Commande #' + (commande()?.id_commande?.substring(0, 8) || '') }}
+          </h2>
+          <div class="detail-status-badge detail-status-badge--terminee" *ngIf="isCommandeTerminee()">Terminée</div>
+          <div class="detail-status-badge detail-status-badge--annulee" *ngIf="isCommandeAnnulee()">Annulée</div>
+        </div>
         <div class="commande-title-edit" *ngIf="isEditMode()">
           <app-floating-label-input
             [label]="'Nom / Intitulé de la commande'"
@@ -69,16 +73,28 @@
       <!-- Les boutons sont maintenant dans la barre fixe en haut -->
     </div>
 
+    <section class="detail-duplicate-section" *ngIf="isCommandeTerminee()">
+      <button
+        type="button"
+        class="btn-duplicate"
+        (click)="duplicateCommande()"
+        [disabled]="isDuplicating()">
+        {{ isDuplicating() ? 'Duplication en cours...' : 'Dupliquer la commande' }}
+      </button>
+    </section>
+
     <form id="detailCommandeForm" [formGroup]="formGroup" *ngIf="formGroup" (ngSubmit)="onSave()">
       
       <!-- Informations de la commande -->
       <section class="form-section">
         <h2 class="section-title">Informations de la commande</h2>
-        
+        <p class="commande-date-display">
+          <strong>Date de commande :</strong>&nbsp;{{ formatDate(commande()?.date_commande || '') }}
+        </p>
         <div 
           class="input-wrapper"
-          [class.deadline-highlight-warning]="getDeadlineStatus() === 'warning'"
-          [class.deadline-highlight-danger]="getDeadlineStatus() === 'danger'">
+          [class.deadline-highlight-warning]="getDeadlineStatus() === 'warning' && !isCommandeTerminee() && !isCommandeAnnulee()"
+          [class.deadline-highlight-danger]="getDeadlineStatus() === 'danger' && !isCommandeTerminee() && !isCommandeAnnulee()">
           <app-floating-label-input
             [label]="'Deadline'"
             [control]="get('deadline')"
@@ -610,7 +626,11 @@
 
     <!-- Statuts de la commande -->
     <section class="statuts-section">
-      <h2 class="section-title">Statuts de la commande</h2>
+      <div class="statuts-section__title-row">
+        <h2 class="section-title">Statuts de la commande</h2>
+        <div class="detail-status-badge detail-status-badge--terminee" *ngIf="isCommandeTerminee()">Terminée</div>
+        <div class="detail-status-badge detail-status-badge--annulee" *ngIf="isCommandeAnnulee()">Annulée</div>
+      </div>
       
       <div class="statuts-list">
         <label 
@@ -630,6 +650,7 @@
         </label>
       </div>
     </section>
+
   </div>
 
   <!-- Footer fixe mobile/tablette : Afficher prix, Supprimer, Modifier / Annuler+Enregistrer, + Toggle attente réponse -->
@@ -682,6 +703,39 @@
     <div class="delete-confirm-actions">
       <button type="button" class="btn-cancel-delete" (click)="closeDeleteConfirm()">Annuler</button>
       <button type="button" class="btn-confirm-delete" (click)="confirmDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup de confirmation duplication -->
+<div class="delete-confirm-overlay duplicate-confirm" *ngIf="showDuplicateConfirm()" (click)="closeDuplicateConfirm()">
+  <div class="delete-confirm-popup" (click)="$event.stopPropagation()">
+    <div class="delete-confirm-header">
+      <h3>Confirmer la duplication</h3>
+    </div>
+    <div class="delete-confirm-body">
+      <p>Êtes-vous sûr de vouloir dupliquer cette commande ?</p>
+      <p class="delete-warning">Une nouvelle commande sera créée en “En attente”.</p>
+    </div>
+    <div class="delete-confirm-actions">
+      <button type="button" class="btn-cancel-delete" (click)="closeDuplicateConfirm()">Non</button>
+      <button type="button" class="btn-confirm-delete" (click)="confirmDuplicate()">Oui</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup duplication réussie -->
+<div class="delete-confirm-overlay duplicate-confirm" *ngIf="showDuplicateSuccess()" (click)="closeDuplicateSuccess()">
+  <div class="delete-confirm-popup" (click)="$event.stopPropagation()">
+    <div class="delete-confirm-header">
+      <h3>Commande bien dupliquée</h3>
+    </div>
+    <div class="delete-confirm-body">
+      <p>La commande a été dupliquée avec succès.</p>
+    </div>
+    <div class="delete-confirm-actions">
+      <button type="button" class="btn-cancel-delete" (click)="closeDuplicateSuccess()">Rester sur la commande</button>
+      <button type="button" class="btn-confirm-delete" (click)="viewDuplicatedCommande()">Voir la commande dupliquée</button>
     </div>
   </div>
 </div>

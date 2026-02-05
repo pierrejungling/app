@@ -2,10 +2,10 @@ import { Component, OnInit, OnDestroy, AfterViewChecked, HostListener, inject, s
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormControl, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
-import { HeaderComponent, FloatingLabelInputComponent, SafeResourceUrlPipe, SafeUrlPipe } from '@shared';
+import { HeaderComponent, FloatingLabelInputComponent, SafeResourceUrlPipe, SafeUrlPipe, Payload } from '@shared';
 import { ApiService } from '@api';
-import { ApiURI, COMMANDE_FICHIERS_LIST, COMMANDE_FICHIERS_UPLOAD, COMMANDE_FICHIER_DOWNLOAD } from '@api';
-import { forkJoin } from 'rxjs';
+import { ApiURI, COMMANDE_FICHIERS_LIST, COMMANDE_FICHIERS_UPLOAD, COMMANDE_FICHIER_DOWNLOAD, COMMANDE_DUPLIQUER } from '@api';
+import { forkJoin, Subscription } from 'rxjs';
 import { Commande, CommandeFichier, StatutCommande, ModeContact, Couleur } from '../../model/commande.interface';
 import { AppRoutes } from '@shared';
 import { renderAsync } from 'docx-preview';
@@ -23,6 +23,10 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   isEditMode: WritableSignal<boolean> = signal(false);
   showPrixFields: WritableSignal<boolean> = signal(false);
   showDeleteConfirm: WritableSignal<boolean> = signal(false);
+  isDuplicating: WritableSignal<boolean> = signal(false);
+  duplicateConfirmVisible: WritableSignal<boolean> = signal(false);
+  duplicateSuccessVisible: WritableSignal<boolean> = signal(false);
+  duplicatedCommandeId: WritableSignal<string | null> = signal(null);
   returnPage: string = 'en-cours'; // Page par défaut pour le retour
   private scrollRestored: boolean = false;
   private isInitialLoad: boolean = true; // Flag pour distinguer le chargement initial
@@ -77,6 +81,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   private readonly router: Router = inject(Router);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private scrollKey: string = '';
+  private routeSubscription?: Subscription;
 
   formGroup!: FormGroup;
 
@@ -149,10 +154,17 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     return null;
   }
 
+  isCommandeTerminee(): boolean {
+    return this.commande()?.statut_commande === StatutCommande.TERMINE;
+  }
+
+  isCommandeAnnulee(): boolean {
+    return this.commande()?.statut_commande === StatutCommande.ANNULEE;
+  }
+
   private readonly detailReturnPageKey = 'detail-return-page';
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
     try {
       const stored = sessionStorage.getItem(this.detailReturnPageKey);
       this.returnPage = stored === 'terminees' ? 'terminees' : 'en-cours';
@@ -160,15 +172,19 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       this.returnPage = 'en-cours';
     }
     
-    // Créer une clé unique pour cette commande
-    this.scrollKey = `detail-commande-${id}-scroll`;
-    
     // Sauvegarder la position de scroll avant le rechargement
     window.addEventListener('beforeunload', this.saveScrollPosition);
-    
-    if (id) {
+
+    this.routeSubscription = this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (!id) return;
+      // Créer une clé unique pour cette commande
+      this.scrollKey = `detail-commande-${id}-scroll`;
+      // Réinitialiser l'état de scroll pour la nouvelle commande
+      this.scrollRestored = false;
+      this.isInitialLoad = true;
       this.loadCommande(id);
-    }
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -245,6 +261,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
 
   ngOnDestroy(): void {
     window.removeEventListener('beforeunload', this.saveScrollPosition);
+    this.routeSubscription?.unsubscribe();
     this.revokeFichierPreviewUrls();
     const pdfUrl = this.previewPdfUrl();
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
@@ -1526,6 +1543,57 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
         alert('Erreur lors de la suppression de la commande. Veuillez réessayer.');
       }
     });
+  }
+
+  duplicateCommande(): void {
+    this.duplicateConfirmVisible.set(true);
+  }
+
+  closeDuplicateConfirm(): void {
+    this.duplicateConfirmVisible.set(false);
+  }
+
+  confirmDuplicate(): void {
+    const cmd = this.commande();
+    if (!cmd || this.isDuplicating()) return;
+    this.duplicateConfirmVisible.set(false);
+    this.isDuplicating.set(true);
+    this.apiService.post(COMMANDE_DUPLIQUER(cmd.id_commande), {} as Payload).subscribe({
+      next: (response) => {
+        if (response.result && response.data?.id_commande) {
+          this.duplicatedCommandeId.set(response.data.id_commande);
+          this.duplicateSuccessVisible.set(true);
+        }
+        this.isDuplicating.set(false);
+      },
+      error: (error) => {
+        console.error('Erreur lors de la duplication de la commande:', error);
+        this.isDuplicating.set(false);
+        alert('Erreur lors de la duplication. Veuillez réessayer.');
+      }
+    });
+  }
+
+  closeDuplicateSuccess(): void {
+    this.duplicateSuccessVisible.set(false);
+  }
+
+  viewDuplicatedCommande(): void {
+    const id = this.duplicatedCommandeId();
+    if (!id) return;
+    try {
+      sessionStorage.setItem(this.detailReturnPageKey, 'en-cours');
+    } catch {}
+    this.duplicateSuccessVisible.set(false);
+    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'detail', id]);
+  }
+
+  showDuplicateConfirm(): boolean {
+    return this.duplicateConfirmVisible();
+  }
+
+  showDuplicateSuccess(): boolean {
+    return this.duplicateSuccessVisible();
   }
 
   formatDate(dateString: string): string {

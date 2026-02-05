@@ -18,3 +18,5 @@ export const COMMANDE_FICHIERS_UPLOAD = (idCommande: string) => `commande/${idCo
 export const COMMANDE_FICHIERS_LIST = (idCommande: string) => `commande/${idCommande}/fichiers`;
 /** URL pour le téléchargement d'un fichier. */
 export const COMMANDE_FICHIER_DOWNLOAD = (idCommande: string, idFichier: string) => `commande/${idCommande}/fichiers/${idFichier}/download`;
+/** URL pour dupliquer une commande. */
+export const COMMANDE_DUPLIQUER = (idCommande: string) => `commande/${idCommande}/dupliquer`;

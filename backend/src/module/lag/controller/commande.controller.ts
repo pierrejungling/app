@@ -94,4 +94,10 @@ export class CommandeController {
     async deleteCommande(@Param('id') id: string) {
         return await this.commandeService.deleteCommande(id);
     }
+
+    @Post(':id/dupliquer')
+    @ApiOperation({ summary: 'Dupliquer une commande' })
+    async dupliquerCommande(@Param('id') id: string) {
+        return await this.commandeService.dupliquerCommande(id);
+    }
 }

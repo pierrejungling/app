@@ -1,9 +1,10 @@
-import { Component, inject, computed, signal, effect } from '@angular/core';
+import { Component, inject, computed, signal, effect, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AppRoutes, AppNode, ThemeService } from '@shared';
-import { TokenService } from '@api';
+import { TokenService, ApiService, ApiURI } from '@api';
 import { filter } from 'rxjs/operators';
+import { Commande, StatutCommande } from '../../../dashboard/feature/commande/model/commande.interface';
 
 @Component({
   selector: 'app-header',
@@ -16,7 +17,10 @@ export class HeaderComponent {
   logoLoaded = false;
   logoError = false;
   private readonly tokenService: TokenService = inject(TokenService);
+  private readonly apiService: ApiService = inject(ApiService);
   private readonly themeService: ThemeService = inject(ThemeService);
+  private readonly searchMinLength = 2;
+  private readonly searchMaxResults = 8;
   
   // Signal pour le thème actuel
   isDarkMode = computed(() => this.themeService.isDarkMode());
@@ -65,11 +69,39 @@ export class HeaderComponent {
 
   // Signal pour suivre la route actuelle
   currentRoute = signal<string>('');
+  searchQuery = signal<string>('');
+  searchFocused = signal<boolean>(false);
+  searchLoading = signal<boolean>(false);
+  searchLoaded = signal<boolean>(false);
+  searchOpen = signal<boolean>(false);
+  allCommandes = signal<Commande[]>([]);
+
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   showBackButton = computed(() => {
     if (!this.isAuthenticated()) return false;
     const route = this.currentRoute();
     // Afficher le bouton retour si on n'est pas sur la page d'accueil du dashboard
     return route !== `/${AppNode.AUTHENTICATED}` && route !== `/${AppNode.AUTHENTICATED}/`;
+  });
+
+  showSearchBar = computed(() => {
+    if (!this.isAuthenticated()) return false;
+    const route = this.normalizeRoute(this.currentRoute());
+    return !route.startsWith(AppRoutes.PUBLIC);
+  });
+
+  showSearchResults = computed(() => {
+    if (!this.searchOpen()) return false;
+    return this.searchQuery().trim().length > 0 || this.searchLoading();
+  });
+
+  filteredCommandes = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    if (query.length < this.searchMinLength) return [];
+    const data = this.allCommandes();
+    return data
+      .filter(cmd => this.getCommandeSearchText(cmd).includes(query))
+      .slice(0, this.searchMaxResults);
   });
   
   constructor(private router: Router) {
@@ -111,6 +143,142 @@ export class HeaderComponent {
 
   goToDashboard(): void {
     this.router.navigate([AppRoutes.AUTHENTICATED]);
+  }
+
+  onSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.searchQuery.set(value);
+    if (value.trim().length >= this.searchMinLength) {
+      this.ensureCommandesLoaded();
+    }
+  }
+
+  onSearchFocus(): void {
+    this.searchFocused.set(true);
+    if (this.searchQuery().trim().length >= this.searchMinLength) {
+      this.ensureCommandesLoaded();
+    }
+  }
+
+  onSearchBlur(): void {
+    setTimeout(() => {
+      this.searchFocused.set(false);
+    }, 150);
+  }
+
+  onSearchEnter(event: Event): void {
+    event.preventDefault();
+    const results = this.filteredCommandes();
+    if (results.length > 0) {
+      this.onSelectCommande(results[0]);
+    }
+  }
+
+  onSelectCommande(commande: Commande): void {
+    this.searchFocused.set(false);
+    this.searchOpen.set(false);
+    this.searchQuery.set('');
+    this.router.navigate([AppRoutes.AUTHENTICATED, 'commandes', 'detail', commande.id_commande]);
+  }
+
+  toggleSearch(): void {
+    const nextState = !this.searchOpen();
+    this.searchOpen.set(nextState);
+    if (nextState) {
+      this.onSearchFocus();
+      setTimeout(() => this.searchInput?.nativeElement?.focus(), 0);
+    }
+  }
+
+  getCommandeTitle(commande: Commande): string {
+    return (
+      commande.produit ||
+      commande.description ||
+      commande.personnalisation?.texte ||
+      'Commande sans intitulé'
+    );
+  }
+
+  getCommandeMeta(commande: Commande): string {
+    const clientName = this.getClientName(commande.client);
+    const statusLabel = this.getCommandeStatusLabel(commande);
+    return `${clientName} • ${statusLabel}`;
+  }
+
+  getCommandeClientLabel(commande: Commande): string {
+    return this.getClientName(commande.client);
+  }
+
+  getCommandeDateLabel(commande: Commande): string {
+    if (!commande.date_commande) return 'Date inconnue';
+    const date = new Date(commande.date_commande);
+    if (Number.isNaN(date.getTime())) return 'Date inconnue';
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  }
+
+  getCommandePriceLabel(commande: Commande): string | null {
+    if (commande.prix_final === undefined || commande.prix_final === null) return null;
+    return `${commande.prix_final} €`;
+  }
+
+  getCommandeStatusLabel(commande: Commande): string {
+    if (commande.statut_commande === StatutCommande.TERMINE) return 'Terminée';
+    if (commande.statut_commande === StatutCommande.ANNULEE) return 'Annulée';
+    return 'En cours';
+  }
+
+  getCommandeStatusClass(commande: Commande): string {
+    if (commande.statut_commande === StatutCommande.TERMINE) return 'status--terminee';
+    if (commande.statut_commande === StatutCommande.ANNULEE) return 'status--annulee';
+    return 'status--en-cours';
+  }
+
+  private getClientName(client: Commande['client']): string {
+    const nom = client?.nom || '';
+    const prenom = client?.prénom || '';
+    const fullName = `${nom} ${prenom}`.trim();
+    if (fullName) return fullName;
+    return client?.mail || client?.téléphone || 'Client inconnu';
+  }
+
+  private getCommandeSearchText(commande: Commande): string {
+    const client = commande.client;
+    return [
+      commande.id_commande,
+      commande.produit,
+      commande.description,
+      commande.personnalisation?.texte,
+      client?.nom,
+      client?.prénom,
+      client?.mail,
+      client?.téléphone,
+      client?.tva,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+  }
+
+  private ensureCommandesLoaded(): void {
+    if (this.searchLoaded() || this.searchLoading()) return;
+    this.searchLoading.set(true);
+    this.apiService.get(ApiURI.LISTE_COMMANDES).subscribe({
+      next: (response) => {
+        if (response.result && response.data) {
+          this.allCommandes.set(response.data as Commande[]);
+          this.searchLoaded.set(true);
+        }
+        this.searchLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des commandes:', error);
+        this.searchLoading.set(false);
+      }
+    });
   }
   
   private encodeLogoPath(path: string): string {
@@ -163,5 +331,9 @@ export class HeaderComponent {
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  private normalizeRoute(route: string): string {
+    return route.split('?')[0].split('#')[0];
   }
 }

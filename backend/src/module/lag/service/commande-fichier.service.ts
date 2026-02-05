@@ -5,6 +5,7 @@ import { CommandeFichier } from '../model/entity/commande_fichier.entity';
 import { Commande } from '../model/entity/commande.entity';
 import { R2Service } from './r2.service';
 import { ulid } from 'ulid';
+import { Readable } from 'stream';
 
 const PREFIX = 'commandes';
 
@@ -107,5 +108,52 @@ export class CommandeFichierService {
             await this.r2Service.delete(f.key_r2);
             await this.fichierRepository.remove(f);
         }
+    }
+
+    /** Duplique tous les fichiers d'une commande vers une autre. */
+    async duplicateForCommande(sourceCommandeId: string, targetCommandeId: string): Promise<void> {
+        const targetCommande = await this.commandeRepository.findOne({
+            where: { id_commande: targetCommandeId },
+        });
+        if (!targetCommande) {
+            throw new NotFoundException('Commande cible non trouvée');
+        }
+
+        const fichiers = await this.fichierRepository.find({
+            where: { commande: { id_commande: sourceCommandeId } },
+        });
+
+        for (const f of fichiers) {
+            const { stream, contentType } = await this.r2Service.getStream(f.key_r2);
+            const buffer = await this.streamToBuffer(stream);
+            const idFichier = ulid();
+            const nomSanitized = sanitizeFileName(f.nom_fichier || 'fichier');
+            const keyR2 = `${PREFIX}/${targetCommandeId}/${idFichier}_${nomSanitized}`;
+
+            await this.r2Service.upload(
+                keyR2,
+                buffer,
+                f.type_mime || contentType || 'application/octet-stream',
+            );
+
+            const fichier = new CommandeFichier();
+            fichier.id_fichier = idFichier;
+            fichier.key_r2 = keyR2;
+            fichier.nom_fichier = f.nom_fichier;
+            fichier.type_mime = f.type_mime;
+            fichier.taille_octets = f.taille_octets ?? buffer.length;
+            fichier.date_upload = new Date();
+            fichier.commande = targetCommande;
+
+            await this.fichierRepository.save(fichier);
+        }
+    }
+
+    private async streamToBuffer(stream: Readable): Promise<Buffer> {
+        const chunks: Buffer[] = [];
+        for await (const chunk of stream) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        return Buffer.concat(chunks);
     }
 }

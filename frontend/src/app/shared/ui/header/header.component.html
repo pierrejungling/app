@@ -20,6 +20,15 @@
           title="Retour à la page précédente">
           ← Retour
         </button>
+        <div class="header__search" *ngIf="showSearchBar()">
+          <button
+            class="header__search-btn"
+            type="button"
+            title="Rechercher une commande"
+            (click)="toggleSearch()">
+            🔎
+          </button>
+        </div>
         <button 
           class="header__settings-btn"
           (click)="goToSettings()"
@@ -58,3 +67,52 @@
     </div>
   </div>
 </header>
+<div class="header__search-overlay" *ngIf="searchOpen()">
+  <div class="header__search-backdrop" (click)="toggleSearch()"></div>
+  <div class="header__search-modal" role="dialog" aria-modal="true" aria-label="Recherche de commande">
+    <div class="header__search-modal-header">
+      <span class="header__search-modal-title">Rechercher une commande</span>
+      <button class="header__search-close" type="button" (click)="toggleSearch()" aria-label="Fermer">
+        ✕
+      </button>
+    </div>
+    <div class="header__search-input">
+      <input
+        #searchInput
+        type="search"
+        class="header__search-field"
+        placeholder="Rechercher une commande..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        (focus)="onSearchFocus()"
+        (blur)="onSearchBlur()"
+        (keydown.enter)="onSearchEnter($event)"
+        aria-label="Rechercher une commande">
+    </div>
+    <div class="header__search-results" *ngIf="showSearchResults()">
+      <div class="header__search-status" *ngIf="searchLoading()">Chargement des commandes...</div>
+      <div class="header__search-status" *ngIf="!searchLoading() && searchQuery().trim().length < 2">
+        Tapez au moins 2 caractères
+      </div>
+      <button
+        type="button"
+        class="header__search-item"
+        *ngFor="let commande of filteredCommandes()"
+        (mousedown)="onSelectCommande(commande)">
+        <div class="header__search-item-head">
+          <div class="header__search-item-title">{{ getCommandeTitle(commande) }}</div>
+          <span class="header__search-status-pill" [ngClass]="getCommandeStatusClass(commande)">
+            {{ getCommandeStatusLabel(commande) }}
+          </span>
+        </div>
+        <div class="header__search-item-meta">
+          {{ getCommandeClientLabel(commande) }} • {{ getCommandeDateLabel(commande) }}
+          <span *ngIf="getCommandePriceLabel(commande)"> • {{ getCommandePriceLabel(commande) }}</span>
+        </div>
+      </button>
+      <div class="header__search-status" *ngIf="!searchLoading() && searchQuery().trim().length >= 2 && filteredCommandes().length === 0">
+        Aucune commande trouvée
+      </div>
+    </div>
+  </div>
+</div>

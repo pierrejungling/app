@@ -313,6 +313,83 @@ export class CommandeService {
         } as any;
     }
 
+    async dupliquerCommande(idCommande: string): Promise<any> {
+        const commande = await this.commandeRepository.findOne({
+            where: { id_commande: idCommande },
+            relations: ['client', 'supports']
+        });
+
+        if (!commande) {
+            throw new Error('Commande non trouvée');
+        }
+
+        const gravure = await this.gravureRepository.findOne({
+            where: { commande: { id_commande: idCommande } },
+            relations: ['commande']
+        });
+
+        let support: Support | null = null;
+        let personnalisation: Personnalisation | null = null;
+
+        if (gravure) {
+            support = await this.supportRepository.findOne({
+                where: { gravure: { id_gravure: gravure.id_gravure } }
+            });
+
+            personnalisation = await this.personnalisationRepository.findOne({
+                where: { gravure: { id_gravure: gravure.id_gravure } }
+            });
+        }
+
+        const supports = commande.supports ? commande.supports.map((cs: CommandeSupport) => ({
+            nom_support: cs.nom_support,
+            prix_support: cs.prix_support,
+            url_support: cs.url_support,
+            prix_unitaire: cs.prix_unitaire,
+            nombre_unites: cs.nombre_unites,
+            prix_support_unitaire: cs.prix_support_unitaire
+        })) : [];
+
+        const originalNom = commande.produit || 'Commande sans nom';
+        const payload: AjouterCommandePayload = {
+            nom_commande: `Copie : ${originalNom}`,
+            deadline: undefined,
+            coordonnees_contact: {
+                nom: commande.client?.nom ?? undefined,
+                prenom: commande.client?.prénom ?? undefined,
+                telephone: commande.client?.téléphone ?? undefined,
+                mail: commande.client?.mail ?? undefined,
+                adresse: commande.client?.adresse ?? undefined,
+                tva: commande.client?.tva ?? undefined,
+            },
+            description_projet: commande.description ?? undefined,
+            dimensions_souhaitees: support?.dimensions ?? undefined,
+            couleur: personnalisation?.couleur ?? undefined,
+            support: support?.nom_support ?? undefined,
+            police_ecriture: personnalisation?.police ?? undefined,
+            texte_personnalisation: personnalisation?.texte ?? undefined,
+            quantité: commande.quantité ?? 1,
+            payé: false,
+            commentaire_paye: undefined,
+            attente_reponse: false,
+            mode_contact: commande.mode_contact ?? undefined,
+            statut_initial: StatutCommande.EN_ATTENTE_INFORMATION,
+            supports: supports as any,
+        };
+
+        const nouvelleCommande = await this.ajouterCommande(payload);
+
+        await this.updateCommande(nouvelleCommande.id_commande, {
+            prix_final: commande.prix_final ?? null,
+            prix_unitaire_final: commande.prix_unitaire_final ?? null,
+            quantite_realisee: 0,
+        });
+
+        await this.commandeFichierService.duplicateForCommande(idCommande, nouvelleCommande.id_commande);
+
+        return this.getCommandeById(nouvelleCommande.id_commande);
+    }
+
     async updateCommande(idCommande: string, payload: any): Promise<any> {
         const commande = await this.commandeRepository.findOne({
             where: { id_commande: idCommande },
