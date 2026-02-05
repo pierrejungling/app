@@ -1,6 +1,6 @@
 .commandes-en-cours-wrapper {
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--color-background-light, #f5f5f5);
   padding: 0.25rem 2rem;
   padding-top: 48px; // Espace pour le header fixe
   overflow: hidden;
@@ -31,7 +31,7 @@
   font-size: 2rem;
   font-weight: 600;
   margin: 0;
-  color: #333;
+  color: var(--color-text, #333);
 }
 
 .header-actions {
@@ -89,7 +89,7 @@
 .loading-area {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: var(--color-text-light, #666);
 }
 
 // Affichage conditionnel desktop / mobile
@@ -116,7 +116,7 @@
 }
 
 .table-container {
-  background: white;
+  background: var(--color-secondary);
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -157,7 +157,7 @@
   font-weight: 600;
   color: white;
   border-bottom: none;
-  border-right: 2px solid #212529;
+  border-right: 2px solid var(--color-input-border);
   width: calc(100% / 9); // 9 colonnes égales
   vertical-align: top;
   background: #495057;
@@ -179,7 +179,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #212529;
+    background: var(--color-input-border);
     z-index: 101;
   }
 }
@@ -211,8 +211,8 @@
 
 .commandes-table td {
   padding: 0.75rem 0.5rem;
-  border-right: 1px solid #dee2e6;
-  border-bottom: 1px solid #dee2e6;
+  border-right: 1px solid var(--color-input-border);
+  border-bottom: 1px solid var(--color-input-border);
   vertical-align: top;
   width: calc(100% / 9); // 9 colonnes égales
 }
@@ -232,8 +232,8 @@
 }
 
 .commande-card {
-  background: #e9ecef;
-  border: 1px solid #ced4da;
+  background: var(--color-secondary);
+  border: 1px solid var(--color-input-border);
   border-radius: 6px;
   padding: 1rem;
   padding-top: 2rem; // Espace en haut pour "✓ payé"
@@ -262,7 +262,7 @@
 .commande-card:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
-  background: #dee2e6;
+  background: var(--color-background-light);
 
   &.deadline-warning {
     background: rgba(255, 152, 0, 0.25); // Orange plus foncé au survol
@@ -293,7 +293,7 @@
 .commande-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin: 0;
   word-break: break-word;
 }
@@ -303,17 +303,27 @@
   top: 0.5rem;
   right: 0.5rem;
   font-size: 0.75rem;
-  color: #666;
   font-weight: 500;
   z-index: 10;
-  background: rgba(233, 236, 239, 0.9); // Fond légèrement opaque pour meilleure lisibilité
   padding: 0.15rem 0.3rem;
   border-radius: 3px;
+  // Style adaptatif selon le thème
+  background: rgba(76, 175, 80, 0.15); // Fond vert léger
+  color: #2e7d32; // Texte vert foncé en mode clair
+  border: 1px solid rgba(76, 175, 80, 0.3);
+
+  // Mode sombre
+  :root[data-theme="dark"] &,
+  [data-theme="dark"] & {
+    background: rgba(76, 175, 80, 0.25);
+    color: #81c784; // Texte vert clair en mode sombre
+    border-color: rgba(76, 175, 80, 0.5);
+  }
 }
 
 .commande-info {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--color-text-light);
 }
 
 .commande-info p {
@@ -322,7 +332,7 @@
 }
 
 .commande-info strong {
-  color: #333;
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -379,7 +389,7 @@
 .commande-actions {
   margin-top: auto;
   padding-top: 0.75rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-input-border);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -424,7 +434,7 @@
 
 .checkbox-text {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--color-text-light);
   font-weight: 500;
 }
 
@@ -478,7 +488,7 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background-color: white;
+    background-color: var(--color-secondary);
     top: 2px;
     left: 2px;
     transition: all 0.3s ease;
@@ -509,7 +519,7 @@
 .toggle-label-small {
   font-size: 0.7rem;
   font-weight: 500;
-  color: #666;
+  color: var(--color-text-light);
   transition: color 0.3s ease;
   white-space: nowrap; // Empêcher le texte de passer à la ligne
 }
@@ -532,9 +542,9 @@
 .mobile-section {
   margin-bottom: 0.5rem;
   border-radius: 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border);
   overflow: hidden;
-  background: white;
+  background: var(--color-secondary);
 
   &:last-child {
     margin-bottom: 0;
@@ -554,7 +564,7 @@
   font-family: inherit;
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   text-align: left;
   min-height: 48px;
   transition: background-color 0.2s ease;
@@ -587,13 +597,13 @@
 
 .mobile-section__count {
   font-weight: 500;
-  color: #666;
+  color: var(--color-text-light);
   font-size: 0.9rem;
 }
 
 .mobile-section__chevron {
   font-size: 0.65rem;
-  color: #666;
+  color: var(--color-text-light);
   transition: transform 0.25s ease;
   flex-shrink: 0;
   margin-left: 0.5rem;
@@ -627,8 +637,8 @@
 }
 
 .mobile-card {
-  background: #e9ecef;
-  border: 1px solid #ced4da;
+  background: var(--color-secondary);
+  border: 1px solid var(--color-input-border);
   border-radius: 8px;
   padding: 1rem;
   padding-top: 2.25rem;
@@ -658,7 +668,7 @@
 }
 
 .mobile-card:active {
-  background: #dee2e6;
+  background: var(--color-background-light);
 
   &.deadline-warning {
     background: rgba(255, 152, 0, 0.25); // Orange plus foncé au clic
@@ -690,7 +700,7 @@
 .mobile-card__title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin: 0;
   word-break: break-word;
   line-height: 1.25;
@@ -698,7 +708,7 @@
 
 .mobile-card__info {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--color-text-light);
 
   p {
     margin: 0.4rem 0;
@@ -706,7 +716,7 @@
   }
 
   strong {
-    color: #333;
+    color: var(--color-text);
     font-weight: 600;
   }
 }
@@ -719,7 +729,7 @@
 .mobile-card__actions {
   margin-top: 0.25rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-input-border);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -737,12 +747,22 @@
   top: 0.5rem;
   right: 0.5rem;
   font-size: 0.75rem;
-  color: #666;
   font-weight: 500;
   z-index: 10;
-  background: rgba(233, 236, 239, 0.9);
   padding: 0.15rem 0.35rem;
   border-radius: 3px;
+  // Style adaptatif selon le thème
+  background: rgba(76, 175, 80, 0.15); // Fond vert léger
+  color: #2e7d32; // Texte vert foncé en mode clair
+  border: 1px solid rgba(76, 175, 80, 0.3);
+
+  // Mode sombre
+  :root[data-theme="dark"] &,
+  [data-theme="dark"] & {
+    background: rgba(76, 175, 80, 0.25);
+    color: #81c784; // Texte vert clair en mode sombre
+    border-color: rgba(76, 175, 80, 0.5);
+  }
 }
 
 .mobile-empty {
@@ -852,8 +872,8 @@
     gap: 0.75rem;
     margin-bottom: 0;
     padding: 0.75rem 1rem;
-    background: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--color-background-light, #f5f5f5);
+    border-bottom: 1px solid var(--color-input-border);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
 
@@ -878,8 +898,8 @@
     z-index: 50;
     min-height: 56px;
     padding: 1rem 0.75rem;
-    background: white !important;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--color-secondary) !important;
+    border-bottom: 1px solid var(--color-input-border);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }

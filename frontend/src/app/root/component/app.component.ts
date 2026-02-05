@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
-import { Language } from '@shared';
+import { Language, ThemeService } from '@shared';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +16,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'app';
   translate = inject(TranslateService);
   private router = inject(Router);
+  private themeService = inject(ThemeService); // Initialiser le service de thème
 
   /** Premier NavigationEnd = chargement initial (reload ou première visite) → ne pas scroller pour garder la restauration. Les suivants = navigation clic → scroller en haut. */
   private initialNavigation = true;

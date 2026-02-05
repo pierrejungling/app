@@ -5,12 +5,12 @@
     <!-- Logo en grand -->
     <div class="dashboard-home__logo-section fade-in">
       <img 
-        [src]="logoPath" 
+        [src]="logoPath()" 
         alt="LA GRAVISTERIE" 
         class="dashboard-home__logo"
         (load)="onLogoLoad()"
         (error)="onLogoError($event)">
-      <h1 class="dashboard-home__title" *ngIf="logoError || !logoPath">LA GRAVISTERIE</h1>
+      <h1 class="dashboard-home__title" *ngIf="logoError || !logoPath()">LA GRAVISTERIE</h1>
       <p class="dashboard-home__subtitle">Bienvenue, {{ currentUser }}</p>
     </div>
 

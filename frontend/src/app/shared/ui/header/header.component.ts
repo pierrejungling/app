@@ -1,7 +1,7 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { AppRoutes, AppNode } from '@shared';
+import { AppRoutes, AppNode, ThemeService } from '@shared';
 import { TokenService } from '@api';
 import { filter } from 'rxjs/operators';
 
@@ -15,21 +15,47 @@ import { filter } from 'rxjs/operators';
 export class HeaderComponent {
   logoLoaded = false;
   logoError = false;
-  currentLogoPath = '';
   private readonly tokenService: TokenService = inject(TokenService);
+  private readonly themeService: ThemeService = inject(ThemeService);
+  
+  // Signal pour le thème actuel
+  isDarkMode = computed(() => this.themeService.isDarkMode());
   
   // Liste des fichiers logo possibles à essayer (ordre de priorité)
-  private readonly possibleLogos = [
-    // Logo principal spécifié par l'utilisateur
+  private readonly possibleLogosLight = [
+    // Logo principal spécifié par l'utilisateur (mode clair)
     'assets/images/Logo/La Gravisterie_N.svg',
     // Fallback vers autres formats
     'assets/images/Logo/La Gravisterie avec noir txt_N.svg',
     'assets/images/Logo/La Gravisterie carré_N.svg',
-    'assets/images/Logo/logo_carre.png',
-    'assets/images/Logo/La Gravisterie blanc carré.svg',
-    'assets/images/Logo/La Gravisterie avec txt blanc sans fond copie.svg',
-    'assets/images/Logo/La Gravisterie blanc sans fond copie.svg'
+    'assets/images/Logo/logo_carre.png'
   ];
+
+  private readonly possibleLogosDark = [
+    // Logo blanc pour mode nuit
+    'assets/images/Logo/La Gravisterie Blanc.svg',
+    // Fallback vers autres formats blancs
+    'assets/images/Logo/La Gravisterie blanc sans fond copie.svg',
+    'assets/images/Logo/La Gravisterie blanc carré.svg',
+    'assets/images/Logo/La Gravisterie avec txt blanc sans fond copie.svg'
+  ];
+
+  // Signal pour le logo de fallback (en cas d'erreur)
+  private fallbackLogoPath = signal<string>('');
+
+  // Computed signal pour le logo selon le thème
+  logoPath = computed(() => {
+    // Si un fallback a été défini, l'utiliser
+    const fallback = this.fallbackLogoPath();
+    if (fallback) {
+      return fallback;
+    }
+    
+    // Sinon, utiliser le logo selon le thème
+    const isDark = this.themeService.isDarkMode();
+    const possibleLogos = isDark ? this.possibleLogosDark : this.possibleLogosLight;
+    return possibleLogos[0];
+  });
   
   // Signal computed pour l'authentification (réactif)
   isAuthenticated = computed(() => {
@@ -47,9 +73,6 @@ export class HeaderComponent {
   });
   
   constructor(private router: Router) {
-    // Initialiser avec le logo principal
-    this.currentLogoPath = this.possibleLogos[0];
-    
     // Écouter les changements de route
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -59,6 +82,13 @@ export class HeaderComponent {
     
     // Initialiser avec la route actuelle
     this.currentRoute.set(this.router.url);
+
+    // Réinitialiser le fallback quand le thème change
+    effect(() => {
+      this.themeService.theme(); // S'abonner aux changements de thème
+      this.fallbackLogoPath.set(''); // Réinitialiser le fallback
+      this.logoLoaded = false; // Forcer le rechargement du logo
+    });
   }
   
   logout(): void {
@@ -88,33 +118,36 @@ export class HeaderComponent {
     return path.split('/').map(part => encodeURIComponent(part)).join('/');
   }
   
-  getLogoPath(): string {
-    return this.currentLogoPath;
-  }
-  
   onLogoLoad(): void {
     this.logoLoaded = true;
     this.logoError = false;
-    console.log('Logo chargé avec succès:', this.currentLogoPath);
+    // Réinitialiser le fallback quand le logo charge avec succès
+    this.fallbackLogoPath.set('');
+    console.log('Logo chargé avec succès:', this.logoPath());
   }
   
   onLogoError(): void {
-    // Trouver l'index du logo actuel
-    const currentIndex = this.possibleLogos.indexOf(this.currentLogoPath);
+    const isDark = this.themeService.isDarkMode();
+    const possibleLogos = isDark ? this.possibleLogosDark : this.possibleLogosLight;
+    const currentPath = this.logoPath();
     
-    console.error('Erreur de chargement du logo:', this.currentLogoPath, 'Index:', currentIndex);
+    // Trouver l'index du logo actuel dans la liste appropriée
+    const currentIndex = possibleLogos.indexOf(currentPath);
+    
+    console.error('Erreur de chargement du logo:', currentPath, 'Index:', currentIndex);
     
     // Essayer le logo suivant
-    if (currentIndex < this.possibleLogos.length - 1) {
+    if (currentIndex < possibleLogos.length - 1 && currentIndex >= 0) {
       // Essayer sans encodage d'abord
-      this.currentLogoPath = this.possibleLogos[currentIndex + 1];
+      const nextLogo = possibleLogos[currentIndex + 1];
+      this.fallbackLogoPath.set(nextLogo);
       this.logoLoaded = false;
-      console.log('Essai du logo suivant (sans encodage):', this.currentLogoPath);
-      // Angular détectera le changement de currentLogoPath et rechargera l'image
-    } else if (!this.currentLogoPath.includes('%20')) {
-      // Si tous les logos sans encodage ont échoué, essayer avec encodage
+      console.log('Essai du logo suivant (sans encodage):', nextLogo);
+    } else if (currentIndex === -1 && !currentPath.includes('%20')) {
+      // Le logo actuel n'est pas dans la liste, essayer avec encodage
       console.log('Tentative avec encodage des espaces...');
-      this.currentLogoPath = this.encodeLogoPath(this.possibleLogos[0]);
+      const encodedLogo = this.encodeLogoPath(possibleLogos[0]);
+      this.fallbackLogoPath.set(encodedLogo);
       this.logoLoaded = false;
     } else {
       // Tous les logos ont échoué
@@ -126,5 +159,9 @@ export class HeaderComponent {
   
   showTextFallback(): boolean {
     return !this.logoLoaded && this.logoError;
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 }

@@ -21,7 +21,7 @@
   &__back-btn {
     padding: 0.5rem 1rem;
     background: transparent;
-    border: 1px solid var(--color-border-dark);
+    border: 1px solid var(--color-input-border);
     border-radius: var(--border-radius);
     color: var(--color-text);
     font-size: 0.875rem;
@@ -46,7 +46,7 @@
 
   &__content {
     background: var(--color-secondary);
-    border: 1px solid var(--color-border-dark);
+    border: 1px solid var(--color-input-border);
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-xl);
   }
@@ -161,14 +161,14 @@
 .settings-section--logout {
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-xl);
-  border-top: 1px solid var(--color-border-dark);
+  border-top: 1px solid var(--color-input-border);
 }
 
 .btn-logout {
   padding: 0.875rem 1.5rem;
   background: transparent;
   color: var(--color-text);
-  border: 1px solid var(--color-border-dark);
+  border: 1px solid var(--color-input-border);
   border-radius: var(--border-radius);
   font-size: 1rem;
   font-weight: 600;

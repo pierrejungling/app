@@ -1,7 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { HeaderComponent } from '@shared';
+import { HeaderComponent, ThemeService } from '@shared';
 import { ApiService } from '@api';
 import { ApiURI } from '@api';
 import { ApiResponse } from '@api';
@@ -25,10 +25,46 @@ export interface DashboardCard {
   styleUrl: './dashboard-home-page.component.scss'
 })
 export class DashboardHomePageComponent implements OnInit {
-  logoPath = '';
   logoError = false;
   currentUser: string = 'Utilisateur';
   private readonly apiService: ApiService = inject(ApiService);
+  private readonly themeService: ThemeService = inject(ThemeService);
+
+  // Liste des fichiers logo possibles à essayer (ordre de priorité)
+  private readonly possibleLogosLight = [
+    // Logo principal spécifié par l'utilisateur (mode clair)
+    'assets/images/Logo/La Gravisterie_N.svg',
+    // Fallback vers autres formats
+    'assets/images/Logo/La Gravisterie avec noir txt_N.svg',
+    'assets/images/Logo/La Gravisterie carré_N.svg',
+    'assets/images/Logo/logo_carre.png'
+  ];
+
+  private readonly possibleLogosDark = [
+    // Logo blanc pour mode nuit
+    'assets/images/Logo/La Gravisterie Blanc.svg',
+    // Fallback vers autres formats blancs
+    'assets/images/Logo/La Gravisterie blanc sans fond copie.svg',
+    'assets/images/Logo/La Gravisterie blanc carré.svg',
+    'assets/images/Logo/La Gravisterie avec txt blanc sans fond copie.svg'
+  ];
+
+  // Signal pour le logo de fallback (en cas d'erreur)
+  private fallbackLogoPath = signal<string>('');
+
+  // Computed signal pour le logo selon le thème
+  logoPath = computed(() => {
+    // Si un fallback a été défini, l'utiliser
+    const fallback = this.fallbackLogoPath();
+    if (fallback) {
+      return fallback;
+    }
+    
+    // Sinon, utiliser le logo selon le thème
+    const isDark = this.themeService.isDarkMode();
+    const possibleLogos = isDark ? this.possibleLogosDark : this.possibleLogosLight;
+    return possibleLogos[0];
+  });
   
   dashboardCards: DashboardCard[] = [
     {
@@ -55,9 +91,6 @@ export class DashboardHomePageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    // Définir le chemin du logo
-    this.logoPath = this.getLogoPath();
-    
     // Récupérer le nom d'utilisateur depuis localStorage (fallback)
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -82,6 +115,12 @@ export class DashboardHomePageComponent implements OnInit {
 
     // Charger les commandes pour mettre à jour les compteurs
     this.loadCommandesCount();
+
+    // Réinitialiser le fallback quand le thème change
+    effect(() => {
+      this.themeService.theme(); // S'abonner aux changements de thème
+      this.fallbackLogoPath.set(''); // Réinitialiser le fallback
+    });
   }
 
   loadCommandesCount(): void {
@@ -124,14 +163,11 @@ export class DashboardHomePageComponent implements OnInit {
     });
   }
 
-  getLogoPath(): string {
-    // Utiliser le logo spécifié par l'utilisateur
-    return 'assets/images/Logo/La Gravisterie_N.svg';
-  }
-
   onLogoLoad(): void {
     this.logoError = false;
-    console.log('Logo chargé avec succès:', this.logoPath);
+    // Réinitialiser le fallback quand le logo charge avec succès
+    this.fallbackLogoPath.set('');
+    console.log('Logo chargé avec succès:', this.logoPath());
   }
 
   onLogoError(event: Event): void {
@@ -160,33 +196,32 @@ export class DashboardHomePageComponent implements OnInit {
   }
 
   tryNextLogo(): void {
-    const possibleLogos = [
-      'assets/images/Logo/La Gravisterie avec noir txt_N.svg',
-      'assets/images/Logo/La Gravisterie_N.svg',
-      'assets/images/Logo/La Gravisterie carré_N.svg',
-      'assets/images/Logo/logo_carre.png',
-      'assets/images/Logo/La Gravisterie blanc carré.svg'
-    ];
+    const isDark = this.themeService.isDarkMode();
+    const possibleLogos = isDark ? this.possibleLogosDark : this.possibleLogosLight;
+    const currentPath = this.logoPath();
     
-    // Trouver l'index du logo actuel
-    const currentIndex = possibleLogos.indexOf(this.logoPath);
+    // Trouver l'index du logo actuel dans la liste appropriée
+    const currentIndex = possibleLogos.indexOf(currentPath);
     
-    if (currentIndex < possibleLogos.length - 1) {
-      // Essayer le logo suivant sans encoder d'abord
-      this.logoPath = possibleLogos[currentIndex + 1];
+    console.error('Erreur de chargement du logo:', currentPath, 'Index:', currentIndex);
+    
+    // Essayer le logo suivant
+    if (currentIndex < possibleLogos.length - 1 && currentIndex >= 0) {
+      // Essayer sans encodage d'abord
+      const nextLogo = possibleLogos[currentIndex + 1];
+      this.fallbackLogoPath.set(nextLogo);
       this.logoError = false;
-      console.log('Essai du logo suivant (sans encodage):', this.logoPath);
+      console.log('Essai du logo suivant (sans encodage):', nextLogo);
+    } else if (currentIndex === -1 && !currentPath.includes('%20')) {
+      // Le logo actuel n'est pas dans la liste, essayer avec encodage
+      console.log('Tentative avec encodage des espaces...');
+      const encodedLogo = possibleLogos[0].split('/').map(part => encodeURIComponent(part)).join('/');
+      this.fallbackLogoPath.set(encodedLogo);
+      this.logoError = false;
     } else {
-      // Si tous les logos sans encodage ont échoué, essayer avec encodage
-      if (!this.logoPath.includes('%20')) {
-        console.log('Tentative avec encodage des espaces...');
-        this.logoPath = possibleLogos[0].split('/').map(part => encodeURIComponent(part)).join('/');
-        this.logoError = false;
-      } else {
-        // Tous les logos ont échoué
-        this.logoError = true;
-        console.error('Tous les logos ont échoué à charger');
-      }
+      // Tous les logos ont échoué
+      this.logoError = true;
+      console.error('Tous les logos ont échoué à charger');
     }
   }
 }

@@ -52,7 +52,7 @@
 
 .dashboard-card {
   background: var(--color-secondary);
-  border: 1px solid var(--color-border-dark);
+  border: 1px solid var(--color-input-border);
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-lg);
   cursor: pointer;
@@ -123,7 +123,7 @@
     align-items: center;
     margin-top: auto;
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-input-border);
   }
 
   &__counts {
