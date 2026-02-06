@@ -1258,6 +1258,11 @@
   color: var(--color-text);
 }
 
+/* Mode sombre : texte de date plus lisible */
+:host-context([data-theme="dark"]) .commande-date-display {
+  color: var(--color-text);
+}
+
 .address-section {
   background: var(--color-background-light);
   padding: 1rem;
