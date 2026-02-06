@@ -105,6 +105,8 @@ export class CommandeService {
         commande.date_commande = payload.date_commande ? new Date(payload.date_commande) : new Date();
         commande.description = payload.description_projet ?? null;
         commande.quantité = payload.quantité ?? 1;
+        commande.prix_final = payload.prix_final ?? null;
+        commande.prix_unitaire_final = payload.prix_unitaire_final ?? null;
         commande.payé = payload.payé ?? false;
         commande.commentaire_paye = payload.commentaire_paye?.trim() || null;
         commande.attente_reponse = payload.attente_reponse ?? false; // Par défaut false = client attend réponse (rouge)
