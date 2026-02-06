@@ -15,6 +15,7 @@ const bootstrap = async (): Promise<void> => {
   app.enableCors({
     origin: [
       'https://gravisterie-app-frontend.onrender.com',
+      'https://admin.gravisterie.be',
       'http://localhost:4200', // Pour le développement local
     ],
     credentials: true,
