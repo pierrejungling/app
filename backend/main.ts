@@ -12,7 +12,7 @@ const bootstrap = async () => {
   // Configuration CORS pour autoriser les requêtes depuis le frontend Render
   app.enableCors({
     origin: [
-      'https://gravisterie-app-frontend.onrender.com',
+      'https://admin.gravisterie.be',
       'http://localhost:4200', // Pour le développement local
     ],
     credentials: true,
