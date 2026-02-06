@@ -69,7 +69,7 @@ export class DashboardHomePageComponent implements OnInit {
   dashboardCards: DashboardCard[] = [
     {
       title: 'Nouvelle commande / vente',
-      description: 'Créer une nouvelle commande',
+      description: 'Créer une nouvelle commande / vente',
       route: '/dashboard/commandes/nouvelle',
       icon: '➕',
     },
