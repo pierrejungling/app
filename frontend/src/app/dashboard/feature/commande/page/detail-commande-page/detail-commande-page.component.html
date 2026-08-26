@@ -1164,6 +1164,49 @@
               </div>
             </ng-template>
           </div>
+
+          <div class="address-map" *ngIf="hasAdressePourCarte()">
+            <div class="address-trajet" aria-live="polite">
+              <p class="address-trajet__label">Depuis l’atelier (Rue des Wêdes 11, 4900 Spa)</p>
+              <p class="address-trajet__value" *ngIf="trajetLoading()">Calcul du trajet…</p>
+              <p class="address-trajet__value address-trajet__value--error" *ngIf="!trajetLoading() && trajetError()">
+                {{ trajetError() }}
+              </p>
+              <p class="address-trajet__value" *ngIf="!trajetLoading() && !trajetError() && formatTrajetDistance() && formatTrajetDuree()">
+                <span class="address-trajet__metric">{{ formatTrajetDistance() }}</span>
+                <span class="address-trajet__sep" aria-hidden="true">·</span>
+                <span class="address-trajet__metric">{{ formatTrajetDuree() }}</span>
+                <span class="address-trajet__mode">en voiture</span>
+              </p>
+            </div>
+
+            <div class="address-map__toolbar">
+              <button
+                type="button"
+                class="btn-address-map"
+                (click)="toggleAdresseMap()"
+                [attr.aria-expanded]="showAdresseMap()">
+                {{ showAdresseMap() ? 'Masquer la carte' : 'Voir sur la carte' }}
+              </button>
+              <a
+                class="address-map__external"
+                [href]="getAdresseMapsExternalUrl()!"
+                target="_blank"
+                rel="noopener noreferrer">
+                Ouvrir dans Maps ↗
+              </a>
+            </div>
+            <div class="address-map__frame-wrap" *ngIf="showAdresseMap() && getAdresseMapEmbedUrl() as mapEmbedUrl">
+              <iframe
+                class="address-map__frame"
+                [src]="mapEmbedUrl | safeResourceUrl"
+                title="Carte de l'adresse client"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen>
+              </iframe>
+            </div>
+          </div>
         </div>
 
         <div class="input-wrapper">

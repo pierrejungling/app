@@ -5,7 +5,7 @@ import { FormControl, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { HeaderComponent, FloatingLabelInputComponent, SafeResourceUrlPipe, SafeUrlPipe, Payload } from '@shared';
 import { ApiService } from '@api';
 import { ApiURI, COMMANDE_FICHIERS_LIST, COMMANDE_FICHIERS_UPLOAD, COMMANDE_FICHIER_DOWNLOAD, COMMANDE_DUPLIQUER } from '@api';
-import { forkJoin, Subscription } from 'rxjs';
+import { forkJoin, merge, Subscription, debounceTime } from 'rxjs';
 import {
   Commande,
   CommandeFichier,
@@ -48,6 +48,11 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   showPrixFields: WritableSignal<boolean> = signal(false);
   showDeleteConfirm: WritableSignal<boolean> = signal(false);
   isDuplicating: WritableSignal<boolean> = signal(false);
+  showAdresseMap: WritableSignal<boolean> = signal(false);
+  trajetLoading: WritableSignal<boolean> = signal(false);
+  trajetError: WritableSignal<string | null> = signal(null);
+  trajetDistanceKm: WritableSignal<number | null> = signal(null);
+  trajetDureeSec: WritableSignal<number | null> = signal(null);
   duplicateConfirmVisible: WritableSignal<boolean> = signal(false);
   duplicateSuccessVisible: WritableSignal<boolean> = signal(false);
   duplicatedCommandeId: WritableSignal<string | null> = signal(null);
@@ -166,7 +171,13 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   private readonly hostEl: ElementRef<HTMLElement> = inject(ElementRef<HTMLElement>);
   private scrollKey: string = '';
   private routeSubscription?: Subscription;
+  private adresseTrajetSubscription?: Subscription;
+  private trajetRequestId = 0;
   private pdfJsWorkerConfigured = false;
+
+  /** Domicile / atelier — point de départ des trajets. */
+  private static readonly ATELIER_ADRESSE = 'Rue des Wêdes 11, 4900 Spa, Belgique';
+  private static atelierCoordsCache: { lat: number; lon: number } | null = null;
 
   formGroup!: FormGroup;
 
@@ -359,6 +370,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   ngOnDestroy(): void {
     window.removeEventListener('beforeunload', this.saveScrollPosition);
     this.routeSubscription?.unsubscribe();
+    this.adresseTrajetSubscription?.unsubscribe();
     this.bindPreviewImageTouchMove(null);
     this.revokeFichierPreviewUrls();
     const pdfUrl = this.previewPdfUrl();
@@ -388,6 +400,8 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       next: (response) => {
         if (response.result && response.data) {
           this.commande.set(response.data);
+          this.showAdresseMap.set(false);
+          this.clearTrajetResult();
           try {
             const statut = (response.data as Commande).statut_commande;
             const returnPage = statut === StatutCommande.TERMINE || statut === StatutCommande.ANNULEE
@@ -1495,6 +1509,8 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
 
     // Auto-grow textarea en lecture/édition (au cas où le contenu est long)
     this.scheduleGrowAllTextareas();
+    this.bindAdresseTrajetWatcher();
+    void this.refreshTrajetAtelier();
   }
 
   extractAdressePart(adresse: string | null | undefined, index: number): string {
@@ -1528,6 +1544,189 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     if (villeTrim) parts.push(villeTrim);
     if (paysTrim) parts.push(paysTrim);
     return parts.length > 0 ? parts.join(', ') : null;
+  }
+
+  /** Adresse actuelle (formulaire) pour la carte. */
+  getAdresseCourantePourCarte(): string | null {
+    if (!this.formGroup) return null;
+    return this.buildAdresseComplete(
+      this.formGroup.get('rue')?.value,
+      this.formGroup.get('code_postal')?.value,
+      this.formGroup.get('ville')?.value,
+      this.formGroup.get('pays')?.value,
+    );
+  }
+
+  hasAdressePourCarte(): boolean {
+    const adresse = this.getAdresseCourantePourCarte();
+    if (!adresse) return false;
+    // Besoin d'au moins rue ou ville pour une localisation utile
+    const rue = (this.formGroup?.get('rue')?.value || '').trim();
+    const ville = (this.formGroup?.get('ville')?.value || '').trim();
+    const codePostal = (this.formGroup?.get('code_postal')?.value || '').trim();
+    return Boolean(rue || ville || codePostal);
+  }
+
+  toggleAdresseMap(): void {
+    this.showAdresseMap.update((v) => !v);
+  }
+
+  getAdresseMapEmbedUrl(): string | null {
+    const adresse = this.getAdresseCourantePourCarte();
+    if (!adresse) return null;
+    return `https://maps.google.com/maps?q=${encodeURIComponent(adresse)}&z=16&output=embed`;
+  }
+
+  getAdresseMapsExternalUrl(): string | null {
+    const adresse = this.getAdresseCourantePourCarte();
+    if (!adresse) return null;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}`;
+  }
+
+  formatTrajetDistance(): string | null {
+    const km = this.trajetDistanceKm();
+    if (km == null) return null;
+    return `${km.toLocaleString('fr-BE', { maximumFractionDigits: 1, minimumFractionDigits: 0 })} km`;
+  }
+
+  formatTrajetDuree(): string | null {
+    const sec = this.trajetDureeSec();
+    if (sec == null) return null;
+    const totalMin = Math.max(1, Math.round(sec / 60));
+    if (totalMin < 60) {
+      return `~${totalMin} min`;
+    }
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return m > 0 ? `~${h} h ${m} min` : `~${h} h`;
+  }
+
+  private bindAdresseTrajetWatcher(): void {
+    this.adresseTrajetSubscription?.unsubscribe();
+    if (!this.formGroup) return;
+
+    const controls = ['rue', 'code_postal', 'ville', 'pays']
+      .map((name) => this.formGroup.get(name))
+      .filter((c): c is NonNullable<typeof c> => !!c);
+
+    if (controls.length === 0) return;
+
+    this.adresseTrajetSubscription = merge(...controls.map((c) => c.valueChanges))
+      .pipe(debounceTime(550))
+      .subscribe(() => {
+        void this.refreshTrajetAtelier();
+      });
+  }
+
+  private clearTrajetResult(): void {
+    this.trajetLoading.set(false);
+    this.trajetError.set(null);
+    this.trajetDistanceKm.set(null);
+    this.trajetDureeSec.set(null);
+  }
+
+  private async refreshTrajetAtelier(): Promise<void> {
+    const requestId = ++this.trajetRequestId;
+
+    if (!this.hasAdressePourCarte()) {
+      this.clearTrajetResult();
+      return;
+    }
+
+    const destination = this.getAdresseCourantePourCarte();
+    if (!destination) {
+      this.clearTrajetResult();
+      return;
+    }
+
+    this.trajetLoading.set(true);
+    this.trajetError.set(null);
+
+    try {
+      const atelier = await this.getAtelierCoords();
+      const dest = await this.geocodeAdresse(destination);
+      if (requestId !== this.trajetRequestId) return;
+
+      if (!atelier || !dest) {
+        this.trajetLoading.set(false);
+        this.trajetDistanceKm.set(null);
+        this.trajetDureeSec.set(null);
+        this.trajetError.set('Adresse introuvable pour le calcul du trajet');
+        return;
+      }
+
+      const route = await this.fetchDrivingRoute(atelier, dest);
+      if (requestId !== this.trajetRequestId) return;
+
+      if (!route) {
+        this.trajetLoading.set(false);
+        this.trajetDistanceKm.set(null);
+        this.trajetDureeSec.set(null);
+        this.trajetError.set('Itinéraire indisponible');
+        return;
+      }
+
+      this.trajetDistanceKm.set(route.distanceM / 1000);
+      this.trajetDureeSec.set(route.durationSec);
+      this.trajetError.set(null);
+      this.trajetLoading.set(false);
+    } catch {
+      if (requestId !== this.trajetRequestId) return;
+      this.trajetLoading.set(false);
+      this.trajetDistanceKm.set(null);
+      this.trajetDureeSec.set(null);
+      this.trajetError.set('Impossible de calculer le trajet');
+    }
+  }
+
+  private async getAtelierCoords(): Promise<{ lat: number; lon: number } | null> {
+    if (DetailCommandePageComponent.atelierCoordsCache) {
+      return DetailCommandePageComponent.atelierCoordsCache;
+    }
+    const coords = await this.geocodeAdresse(DetailCommandePageComponent.ATELIER_ADRESSE);
+    if (coords) {
+      DetailCommandePageComponent.atelierCoordsCache = coords;
+    }
+    return coords;
+  }
+
+  private async geocodeAdresse(adresse: string): Promise<{ lat: number; lon: number } | null> {
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(adresse)}&limit=1&lang=fr`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    const data = await response.json() as {
+      features?: Array<{ geometry?: { coordinates?: number[] } }>;
+    };
+    const coords = data.features?.[0]?.geometry?.coordinates;
+    if (!coords || coords.length < 2) return null;
+
+    const [lon, lat] = coords;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { lat, lon };
+  }
+
+  private async fetchDrivingRoute(
+    from: { lat: number; lon: number },
+    to: { lat: number; lon: number },
+  ): Promise<{ distanceM: number; durationSec: number } | null> {
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    const data = await response.json() as {
+      code?: string;
+      routes?: Array<{ distance?: number; duration?: number }>;
+    };
+    if (data.code !== 'Ok' || !data.routes?.[0]) return null;
+
+    const route = data.routes[0];
+    const distanceM = Number(route.distance);
+    const durationSec = Number(route.duration);
+    if (!Number.isFinite(distanceM) || !Number.isFinite(durationSec)) return null;
+    return { distanceM, durationSec };
   }
 
   // Créer le FormArray pour les supports

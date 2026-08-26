@@ -1968,6 +1968,123 @@
   border: 1px solid var(--color-border);
 }
 
+.address-map {
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border);
+}
+
+.address-trajet {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-secondary);
+}
+
+.address-trajet__label {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  line-height: 1.3;
+}
+
+.address-trajet__value {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+
+  &--error {
+    font-weight: 500;
+    color: var(--color-text-light);
+  }
+}
+
+.address-trajet__metric {
+  font-variant-numeric: tabular-nums;
+}
+
+.address-trajet__sep {
+  color: var(--color-text-light);
+  font-weight: 500;
+}
+
+.address-trajet__mode {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+}
+
+.address-map__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0;
+
+  &:has(+ .address-map__frame-wrap) {
+    margin-bottom: 0.75rem;
+  }
+}
+
+.btn-address-map {
+  appearance: none;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-secondary);
+  color: var(--color-text);
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-text-light);
+  }
+
+  &[aria-expanded='true'] {
+    border-color: var(--color-text);
+  }
+}
+
+.address-map__external {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.address-map__frame-wrap {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-secondary);
+  aspect-ratio: 16 / 10;
+  min-height: 200px;
+  max-height: 360px;
+}
+
+.address-map__frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* Mode sombre : enlever le fond des labels dans Adresse */
 :host-context([data-theme="dark"]) .address-section ::ng-deep .floating-label {
   background: transparent !important;
@@ -3945,6 +4062,12 @@
 
   .address-section {
     padding: 0.75rem;
+  }
+
+  .address-map__frame-wrap {
+    aspect-ratio: 4 / 3;
+    min-height: 180px;
+    max-height: 280px;
   }
 
   .statut-checkbox-label {
