@@ -399,7 +399,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
           }
           this.initForm();
           // Auto-grow textarea (description / paiement) dès que le formulaire est en place
-          setTimeout(() => this.growAllTextareas(), 0);
+          this.scheduleGrowAllTextareas();
           this.loadFichiers(id);
         }
         this.isLoading.set(false);
@@ -1494,7 +1494,7 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     this.refreshQuantiteProduitCompteursStructureControls();
 
     // Auto-grow textarea en lecture/édition (au cas où le contenu est long)
-    setTimeout(() => this.growAllTextareas(), 0);
+    this.scheduleGrowAllTextareas();
   }
 
   extractAdressePart(adresse: string | null | undefined, index: number): string {
@@ -2138,8 +2138,8 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     }
 
     if (newEditMode) {
-      // Une fois les textareas affichés dans le DOM, ajuster leur hauteur au contenu existant
-      setTimeout(() => this.growAllTextareas(), 0);
+      // Attendre que les textareas (*ngIf) soient réellement layoutés avant de mesurer
+      this.scheduleGrowAllTextareas();
     }
   }
 
@@ -2147,6 +2147,14 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
     const el = event.target as HTMLTextAreaElement | null;
     if (!el) return;
     this.growTextarea(el);
+  }
+
+  /** Attend le layout Angular/DOM puis recalcule la hauteur des textareas auto-grow. */
+  private scheduleGrowAllTextareas(): void {
+    requestAnimationFrame(() => {
+      this.growAllTextareas();
+      requestAnimationFrame(() => this.growAllTextareas());
+    });
   }
 
   private growAllTextareas(): void {
@@ -2159,8 +2167,13 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
   }
 
   private growTextarea(el: HTMLTextAreaElement): void {
+    // Couper toute transition inline le temps de la mesure (évite un scrollHeight faux)
+    const previousTransition = el.style.transition;
+    el.style.transition = 'none';
     el.style.height = 'auto';
+    void el.offsetHeight; // force reflow
     el.style.height = `${el.scrollHeight + 2}px`;
+    el.style.transition = previousTransition;
   }
 
   togglePrixFields(): void {
@@ -2232,6 +2245,13 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
 
     const id = this.commande()!.id_commande;
     const currentCommande = this.commande()!;
+    const marquerSiteTraitee = !this.isVente() && isCommandeSiteNonTraitee(currentCommande);
+    if (marquerSiteTraitee) {
+      payload.site_traitee = true;
+      if (isCommandeSite(currentCommande) && !currentCommande.source_web) {
+        payload.source_web = true;
+      }
+    }
     
     // Mettre à jour localement immédiatement avec les nouvelles valeurs du formulaire
     this.commande.set({
@@ -2288,6 +2308,12 @@ export class DetailCommandePageComponent implements OnInit, OnDestroy, AfterView
       gravure: {
         dimensions: formValue.dimensions,
       },
+      ...(marquerSiteTraitee
+        ? {
+            site_traitee: true,
+            source_web: currentCommande.source_web || isCommandeSite(currentCommande),
+          }
+        : {}),
     });
     
     // Réinitialiser le formulaire avec les nouvelles valeurs

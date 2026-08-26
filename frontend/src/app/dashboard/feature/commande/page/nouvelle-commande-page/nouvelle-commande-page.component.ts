@@ -330,7 +330,7 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
 
   ngAfterViewInit(): void {
     // Auto-grow textarea (description / paiement) dès le rendu
-    setTimeout(() => this.growAllTextareas(), 0);
+    this.scheduleGrowAllTextareas();
 
     // Ajouter un listener focus sur l'input support après l'initialisation de la vue
     setTimeout(() => {
@@ -354,6 +354,14 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
     this.growTextarea(el);
   }
 
+  /** Attend le layout Angular/DOM puis recalcule la hauteur des textareas auto-grow. */
+  private scheduleGrowAllTextareas(): void {
+    requestAnimationFrame(() => {
+      this.growAllTextareas();
+      requestAnimationFrame(() => this.growAllTextareas());
+    });
+  }
+
   private growAllTextareas(): void {
     const nodes = document.querySelectorAll<HTMLTextAreaElement>(
       'textarea.description-textarea, textarea.paye-commentaire-input'
@@ -362,10 +370,12 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
   }
 
   private growTextarea(el: HTMLTextAreaElement): void {
-    // Reset puis ajuste à la hauteur du contenu
+    const previousTransition = el.style.transition;
+    el.style.transition = 'none';
     el.style.height = 'auto';
-    // 2px pour éviter un “jitter” lié aux bordures
+    void el.offsetHeight; // force reflow
     el.style.height = `${el.scrollHeight + 2}px`;
+    el.style.transition = previousTransition;
   }
 
   // Créer un FormGroup pour un support
@@ -915,6 +925,7 @@ export class NouvelleCommandePageComponent implements OnInit, OnDestroy, AfterVi
     this.errors.set([]);
     // Scroll vers le haut de la page
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.scheduleGrowAllTextareas();
   }
 
   private readonly entryFromKey = 'commandes-en-cours-entry-from';

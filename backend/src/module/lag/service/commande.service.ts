@@ -509,6 +509,8 @@ export class CommandeService {
             commentaire_paye: commande.commentaire_paye,
             attente_reponse: commande.attente_reponse,
             mode_contact: commande.mode_contact,
+            source_web: Boolean(commande.source_web),
+            site_traitee: Boolean(commande.site_traitee),
             client: commande.client,
             supports: supports as any,
             support: support ? {
@@ -829,6 +831,8 @@ export class CommandeService {
             commentaire_paye: commandeReloaded.commentaire_paye,
             attente_reponse: commandeReloaded.attente_reponse,
             mode_contact: commandeReloaded.mode_contact,
+            source_web: Boolean(commandeReloaded.source_web),
+            site_traitee: Boolean(commandeReloaded.site_traitee),
             client: commandeReloaded.client,
             supports: supports as any,
             support: support ? {
